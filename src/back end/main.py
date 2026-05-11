@@ -37,8 +37,11 @@ from controllers.room_feedback_controller import RoomFeedbackController
 from controllers.schedule_rule_controller import ScheduleRuleController
 from controllers.user_controller import UserController
 
-from gui.theme import apply_theme
-from gui.profile_gui import ProfileDialog
+from gui.theme import (
+    apply_theme, C_PRIMARY, C_DARK, C_MUTED, C_BG, C_BORDER,
+    btn, confirm_dialog, page_header
+)
+from gui.profile_gui import ProfileDialog, ProfileFrame
 from gui.booking_form_gui import BookingFormFrame
 from gui.booking_list_gui import BookingListFrame
 from gui.dashboard_gui import DashboardFrame
@@ -46,7 +49,7 @@ from gui.equipment_gui import EquipmentManagementFrame
 from gui.login_gui import LoginFrame
 from gui.notification_gui import NotificationFrame
 from gui.report_gui import ReportFrame
-from gui.room_feedback_gui import RoomIssueManagementFrame
+from gui.room_feedback_gui import RoomIssueManagementFrame, RoomRatingManagementFrame
 from gui.room_gui import RoomManagementFrame
 from gui.schedule_gui import ScheduleFrame
 from gui.recurring_schedule_gui import RecurringScheduleFrame
@@ -57,15 +60,15 @@ SIDEBAR_W = 240
 SIDEBAR_W_COLLAPSED = 64
 TOPBAR_H  = 68
 
-# ── Sidebar palette — Premium Modern ────────────────────────────
+# ── Sidebar palette — Clean Titanium White ────────────────────────────
 SB_BG     = "#ffffff"
-SB_HOVER  = "#f8fafc"
+SB_HOVER  = "#f1f5f9"
 SB_ACTIVE = "#eef2ff"
 SB_ACCENT = "#4f46e5"
 SB_TEXT   = "#64748b"
 SB_TEXT_ACTIVE = "#4f46e5"
 SB_MUTED  = "#94a3b8"
-SB_SECT   = "#f1f5f9"
+SB_SECT   = "#f8fafc"
 
 # ── Top-bar palette — Clean Glass ───────────────────────────────────────────
 TP_BG     = "#ffffff"
@@ -73,6 +76,8 @@ TP_BORDER = "#f1f5f9"
 TP_TEXT   = "#0f172a"
 TP_MUTED  = "#64748b"
 C_BG      = "#f8fafc"    # Slate 50
+C_SURFACE = "#ffffff"
+C_BORDER  = "#e2e8f0"
 
 # ── Role colours ─────────────────────────────────────────────────────────────
 ROLE_CHIP = {
@@ -100,6 +105,7 @@ NAV_ALL = [
     ("Thiết bị",        "equipment",           "🔧"),
     ("Báo cáo",         "report",              "📈"),
     ("Báo lỗi phòng",   "room_issues",         "⚠️"),
+    ("Quản lý đánh giá", "room_ratings",        "⭐"),
 ]
 
 NAV_GV_SV = [
@@ -124,6 +130,8 @@ PAGE_TITLES = {
     "recurring_schedule":  "Lịch dạy theo chu kỳ tuần",
     "room_issues":         "Báo cáo sự cố phòng",
     "notifications":       "Thông báo nội bộ",
+    "room_ratings":        "Quản lý đánh giá người dùng",
+    "profile":             "Hồ sơ người dùng",
 }
 
 
@@ -135,6 +143,13 @@ def _initials(name: str) -> str:
 
 
 # ── App root ──────────────────────────────────────────────────────────────────
+
+def _initials(name: str) -> str:
+    parts = name.strip().split()
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[-1][0]).upper()
+    return name[:2].upper() if name else "??"
+
 
 class App(tk.Tk):
     def __init__(self) -> None:
@@ -235,149 +250,139 @@ class MainShell(tk.Frame):
 
     # ── TopBar ─────────────────────────────────────────────────────────────────
     def _build_topbar(self) -> None:
-        # Full-width TopBar
+        # ── Luxury Titanium TopBar ──────────────────────────────────────────
         tb_wrap = tk.Frame(self, bg=C_BG)
         tb_wrap.pack(fill="x", pady=(0, 2), padx=0)
         
-        tb = tk.Frame(tb_wrap, bg=TP_BG, height=TOPBAR_H)
+        tb = tk.Frame(tb_wrap, bg=TP_BG, height=TOPBAR_H + 5) # Slightly taller for luxury
         tb.pack(fill="x")
         tb.pack_propagate(False)
-        
-        # Premium Shadow & Rounded Corners (simulated via border)
         tb.config(highlightthickness=1, highlightbackground="#e2e8f0")
 
-        # Left: logo + breadcrumb
+        # ── Left Section: Identity ──────────────────────────────────────────
         left = tk.Frame(tb, bg=TP_BG)
-        left.pack(side="left", fill="y", padx=(16, 0))
+        left.pack(side="left", fill="y", padx=(20, 0))
 
-        # Sidebar toggle button (≡ hamburger)
+        # Hamburger Menu
         self._sb_toggle_btn = tk.Button(
-            left, text="☰", bg=TP_BG, fg="#4f46e5",
-            font=("Segoe UI", 18, "bold"), relief="flat", bd=0, cursor="hand2",
-            activebackground="#eef2ff", activeforeground="#3730a3",
+            left, text="☰", bg=TP_BG, fg=C_PRIMARY,
+            font=("Segoe UI", 16, "bold"), relief="flat", bd=0, cursor="hand2",
+            activebackground="#f1f5f9", activeforeground=C_PRIMARY,
             command=self._toggle_sidebar)
-        self._sb_toggle_btn.pack(side="left", padx=(0, 8))
-        self._sb_toggle_btn.bind("<Enter>",
-            lambda *_: self._sb_toggle_btn.config(bg="#eef2ff"))  # type: ignore
-        self._sb_toggle_btn.bind("<Leave>",
-            lambda *_: self._sb_toggle_btn.config(bg=TP_BG))  # type: ignore
-
-        tk.Label(left, text="HỆ THỐNG QUẢN LÝ PHÒNG HỌC", bg=TP_BG, fg="#4f46e5",
-                 font=("Segoe UI", 12, "bold")).pack(side="left", padx=10)
+        self._sb_toggle_btn.pack(side="left", padx=(0, 15))
         
-        # Removed breadcrumb to prevent layout shifting
+        # System Logo/Title
+        logo_f = tk.Frame(left, bg=TP_BG)
+        logo_f.pack(side="left")
+        tk.Label(logo_f, text="SMART", bg=TP_BG, fg=C_PRIMARY, 
+                 font=("Segoe UI", 11, "bold")).pack(side="left")
+        tk.Label(logo_f, text="CAMPUS", bg=TP_BG, fg=C_DARK, 
+                 font=("Segoe UI", 11, "bold")).pack(side="left", padx=(4, 0))
 
-        # Center: Global Search (Wider for SaaS look)
+        # ── Center Section: Global Command Bar ───────────────────────────────
         center = tk.Frame(tb, bg=TP_BG)
-        center.pack(side="left", fill="both", expand=True, padx=30)
+        center.pack(side="left", fill="both", expand=True, padx=40)
         
-        search_f = tk.Frame(center, bg="#f8fafc", padx=16, pady=8)
-        search_f.pack(expand=True) 
-        search_f.config(highlightthickness=1, highlightbackground="#e2e8f0")
+        # Floating Search Design
+        s_wrap = tk.Frame(center, bg=TP_BG)
+        s_wrap.pack(expand=True)
         
-        tk.Label(search_f, text="🔍", bg="#f1f5f9", fg="#6366f1",
-                 font=("Segoe UI", 11)).pack(side="left")
+        search_f = tk.Frame(s_wrap, bg="#f8fafc", padx=15, pady=6,
+                            highlightthickness=1, highlightbackground="#e2e8f0")
+        search_f.pack(pady=10)
         
-        search_ent = tk.Entry(search_f, bg="#f8fafc", fg=TP_TEXT,
-                              font=("Segoe UI", 10), relief="flat", borderwidth=0,
-                              width=36, insertbackground=TP_TEXT)
-        search_ent.pack(side="left", padx=12)
-        search_ent.insert(0, "Tìm kiếm nhanh...")
+        tk.Label(search_f, text="🔍", bg="#f8fafc", fg="#94a3b8", font=("Segoe UI", 10)).pack(side="left")
         
-        # Quick filter icon at the end
-        tk.Label(search_f, text="🎙️", bg="#f1f5f9", fg="#94a3b8",
-                 font=("Segoe UI", 10), cursor="hand2").pack(side="left", padx=(4, 0))
+        self.search_ent = tk.Entry(search_f, bg="#f8fafc", fg=C_DARK,
+                                   font=("Segoe UI", 10), relief="flat", bd=0, width=45)
+        self.search_ent.pack(side="left", padx=10)
+        self.search_ent.insert(0, "Tìm kiếm tài nguyên, phòng học...")
         
-        def _on_focus_in(e):
-            if search_ent.get() == "Tìm kiếm nhanh...":
-                search_ent.delete(0, "end")
-            search_f.config(highlightbackground="#6366f1", bg="white")
-            search_ent.config(bg="white")
-            for w in search_f.winfo_children(): w.config(bg="white")
+        # Shortcut hint
+        tk.Label(search_f, text="Ctrl+K", bg="#f1f5f9", fg="#94a3b8", 
+                 font=("Segoe UI", 7, "bold"), padx=5, pady=2).pack(side="left")
 
-        def _on_focus_out(e):
-            if not search_ent.get():
-                search_ent.insert(0, "Tìm kiếm nhanh...")
-            search_f.config(highlightbackground="#cbd5e1", bg="#f1f5f9")
-            search_ent.config(bg="#f1f5f9")
-            for w in search_f.winfo_children(): w.config(bg="#f1f5f9")
-                
-        search_ent.bind("<FocusIn>", _on_focus_in)
-        search_ent.bind("<FocusOut>", _on_focus_out)
+        def _on_focus(e, active):
+            clr = "white" if active else "#f8fafc"
+            b_clr = C_PRIMARY if active else "#e2e8f0"
+            search_f.config(bg=clr, highlightbackground=b_clr)
+            self.search_ent.config(bg=clr)
+            if active and self.search_ent.get().startswith("Tìm kiếm"): self.search_ent.delete(0, "end")
+            if not active and not self.search_ent.get(): self.search_ent.insert(0, "Tìm kiếm tài nguyên, phòng học...")
+            for w in search_f.winfo_children(): 
+                if w != self.search_ent and "Label" in str(w): w.config(bg=clr)
 
-        # Right: User Section (Refactored to side="left" for internal flow)
+        self.search_ent.bind("<FocusIn>", lambda e: _on_focus(e, True))
+        self.search_ent.bind("<FocusOut>", lambda e: _on_focus(e, False))
+
+        # ── Right Section: User & Status ────────────────────────────────────
         right = tk.Frame(tb, bg=TP_BG)
-        right.pack(side="right", fill="y", padx=10)
+        right.pack(side="right", fill="y", padx=20)
 
-        user = self.app.current_user  # type: ignore
-        chip_bg, chip_fg = ROLE_CHIP.get(user.role, ("#f1f5f9", "#475569")) # type: ignore
-        av_color = ROLE_AVATAR.get(user.role, "#64748b") # type: ignore
-
-        # Removed help icon
-
-        # 2. Notifications (General)
-        notif_wrap = tk.Frame(right, bg=TP_BG)
-        notif_wrap.pack(side="left", padx=4)
-        self._notif_badge_host = tk.Label(notif_wrap, text="📩", bg=TP_BG, font=("Segoe UI", 13), cursor="hand2")
-        self._notif_badge_host.pack()
-        self._refresh_notif_badge()
-        self._notif_badge_host.bind("<Button-1>", lambda *_: self._navigate("notifications"))
-
-        # 3. Admin Notifications (if applicable)
-        if user.role == "Admin":
-            badge_wrap = tk.Frame(right, bg=TP_BG)
-            badge_wrap.pack(side="left", padx=4)
-            bell = tk.Label(badge_wrap, text="🔔", bg=TP_BG, font=("Segoe UI", 13), cursor="hand2")
-            bell.pack()
-            self._badge_host = bell
-            self._refresh_pending_badge()
-            bell.bind("<Button-1>", lambda *_: self._navigate("booking_list"))
-
-        # 4. Divider & Clock (Moved before user identity)
-        tk.Frame(right, bg="#e2e8f0", width=1, height=20).pack(side="left", padx=15, pady=16)
-        
-        clock_f = tk.Frame(right, bg=TP_BG)
-        clock_f.pack(side="left", padx=(0, 15))
-        tk.Label(clock_f, text="🕒", bg=TP_BG, fg="#94a3b8", font=("Segoe UI", 11)).pack(side="left", padx=(0, 6))
-        clock_text = tk.Frame(clock_f, bg=TP_BG)
-        clock_text.pack(side="left")
-        self._time_lbl = tk.Label(clock_text, text="00:00:00", bg=TP_BG, fg="#1e293b", font=("Segoe UI", 9, "bold"), anchor="w")
+        # 1. System Clock
+        clock_f = tk.Frame(right, bg=TP_BG, padx=15)
+        clock_f.pack(side="left")
+        self._time_lbl = tk.Label(clock_f, text="00:00:00", bg=TP_BG, fg=C_DARK, 
+                                  font=("Segoe UI Semibold", 10), anchor="e")
         self._time_lbl.pack(fill="x")
-        self._date_lbl = tk.Label(clock_text, text="01/01/2026", bg=TP_BG, fg="#94a3b8", font=("Segoe UI", 7), anchor="w")
+        self._date_lbl = tk.Label(clock_f, text="JAN 01, 2026", bg=TP_BG, fg=C_MUTED, 
+                                  font=("Segoe UI", 7, "bold"), anchor="e")
         self._date_lbl.pack(fill="x")
-        self._tick_clock()
+        self._update_clock()
 
-        # 5. Name
-        tk.Label(right, text=user.full_name, bg=TP_BG, fg=TP_TEXT,
-                 font=("Segoe UI", 10, "bold")).pack(side="left", padx=(0, 8))
-
-        # 6. Role
-        tk.Label(right, text=f"{user.role}", bg=chip_bg, fg=chip_fg,
-                 font=("Segoe UI", 8, "bold")).pack(side="left", padx=(0, 10))
-
-        # 7. Avatar (At the absolute far right)
-        av_wrap = tk.Frame(right, bg=TP_BG)
-        av_wrap.pack(side="left", padx=(0, 5))
-        av = tk.Canvas(av_wrap, width=32, height=32, bg=TP_BG, 
-                       highlightthickness=0, cursor="hand2")
-        av.pack()
-        av.create_oval(2, 2, 30, 30, fill=av_color, outline="")
-        av.create_text(16, 16, text=_initials(user.full_name), # type: ignore
-                       fill="white", font=("Segoe UI", 10, "bold"))
+        # 2. Notifications
+        notif_f = tk.Frame(right, bg=TP_BG)
+        notif_f.pack(side="left", padx=10)
         
-        # Online status dot
-        av.create_oval(24, 24, 31, 31, fill="#22c55e", outline="white", width=1)
+        # Messages
+        self._notif_badge_host = tk.Label(notif_f, text="📩", bg=TP_BG, font=("Segoe UI", 13), cursor="hand2")
+        self._notif_badge_host.pack(side="left", padx=5)
+        self._notif_badge_host.bind("<Button-1>", lambda *_: self._navigate("notifications"))
         
-        # User Menu Trigger & Hover
-        av.bind("<Button-1>", self._show_user_menu)
-        av.bind("<Enter>", lambda *_: av.config(highlightthickness=1, highlightbackground=SB_ACCENT))
-        av.bind("<Leave>", lambda *_: av.config(highlightthickness=0))
+        # Alerts (Admin only)
+        if self.app.current_user.role == "Admin": # type: ignore
+            self._badge_host = tk.Label(notif_f, text="🔔", bg=TP_BG, font=("Segoe UI", 13), cursor="hand2")
+            self._badge_host.pack(side="left", padx=5)
+            self._badge_host.bind("<Button-1>", lambda *_: self._navigate("booking_list"))
+        
+        self._refresh_notif_badge()
+        if self.app.current_user.role == "Admin": self._refresh_pending_badge() # type: ignore
+
+        # 3. User Avatar & Identity (Luxury Circle)
+        u = self.app.current_user # type: ignore
+        u_f = tk.Frame(right, bg=TP_BG, cursor="hand2")
+        u_f.pack(side="left", padx=(10, 0))
+        
+        # User Info (Name first)
+        u_info = tk.Frame(u_f, bg=TP_BG)
+        u_info.pack(side="left", padx=(0, 12))
+        tk.Label(u_info, text=u.full_name, bg=TP_BG, fg=C_DARK, font=("Segoe UI Semibold", 9), anchor="e").pack(anchor="e")
+        tk.Label(u_info, text=u.role.upper(), bg=TP_BG, fg=C_PRIMARY, font=("Segoe UI", 7, "bold"), anchor="e").pack(anchor="e")
+
+        # Circular Avatar (on the right)
+        av_c = tk.Canvas(u_f, bg=TP_BG, width=42, height=42, highlightthickness=0)
+        av_c.pack(side="left")
+        
+        # Draw Circle
+        av_clr = ROLE_AVATAR.get(u.role, "#64748b")
+        av_c.create_oval(2, 2, 40, 40, fill=av_clr, outline="")
+        av_c.create_text(21, 21, text=_initials(u.full_name), fill="white", font=("Segoe UI", 11, "bold"))
+        
+        # Online Status Pulse Dot
+        av_c.create_oval(30, 30, 40, 40, fill="#10b981", outline="white", width=2)
+        
+        # ── Bindings for Menu ──────────────────────────────────────────────
+        def _bind_recursive(w):
+            w.bind("<Button-1>", lambda e: self._show_user_menu(e))
+            for child in w.winfo_children(): _bind_recursive(child)
+        
+        _bind_recursive(u_f) # This covers u_info, av_c, and all labels
         # SaaS Bottom Border (Subtle)
         tk.Frame(tb, bg="#f1f5f9", height=1).pack(fill="x", side="bottom")
 
+
     def _show_user_menu(self, event: tk.Event) -> None:
-        """Display a internal SaaS-style dropdown menu within the app."""
-        # If menu already exists, destroy it
+        """Luxury internal SaaS-style dropdown menu."""
         if hasattr(self, "_u_menu") and self._u_menu.winfo_exists():
             self._u_menu.destroy()
             return
@@ -385,21 +390,21 @@ class MainShell(tk.Frame):
         menu = tk.Frame(self, bg="white", highlightthickness=1, highlightbackground="#e2e8f0", padx=1, pady=1)
         self._u_menu = menu
         
-        user = self.app.current_user
+        u = self.app.current_user
         
-        # Header (User Info)
-        head = tk.Frame(menu, bg="#f8fafc", padx=12, pady=10)
+        # Header (User Info) - Premium Look
+        head = tk.Frame(menu, bg="#f8fafc", padx=15, pady=12)
         head.pack(fill="x")
-        tk.Label(head, text=user.full_name, bg="#f8fafc", fg="#1e293b", font=("Segoe UI", 9, "bold")).pack(anchor="w")
-        tk.Label(head, text=user.role, bg="#f8fafc", fg="#64748b", font=("Segoe UI", 8)).pack(anchor="w")
+        tk.Label(head, text=u.full_name, bg="#f8fafc", fg=C_DARK, font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        tk.Label(head, text=u.role.upper(), bg="#f8fafc", fg=C_PRIMARY, font=("Segoe UI", 7, "bold")).pack(anchor="w")
         
-        tk.Frame(menu, bg="#e2e8f0", height=1).pack(fill="x")
+        tk.Frame(menu, bg="#f1f5f9", height=1).pack(fill="x")
         
         items = [
-            ("👤  Hồ sơ cá nhân", lambda: ProfileDialog(self, self.app.current_user, self.app.auth_ctrl)),
-            ("⚙️  Cài đặt hệ thống", None),
+            ("👤  Hồ sơ tài khoản", lambda: self._navigate("profile")),
+            ("🛡️  Bảo mật & Quyền", None),
             ("SEP", None),
-            ("🚪  Đăng xuất", self.app.logout),
+            ("🚪  Đăng xuất hệ thống", self.app.logout),
         ]
         
         def _item(lbl, cmd):
@@ -408,10 +413,10 @@ class MainShell(tk.Frame):
                 return
                 
             btn = tk.Label(menu, text=lbl, bg="white", fg="#475569", 
-                          font=("Segoe UI", 9), anchor="w", padx=12, pady=8, cursor="hand2")
+                          font=("Segoe UI", 9), anchor="w", padx=15, pady=10, cursor="hand2")
             btn.pack(fill="x")
             
-            def _h(e): btn.config(bg="#f8fafc", fg="#6366f1")
+            def _h(e): btn.config(bg="#f8fafc", fg=C_PRIMARY)
             def _l(e): btn.config(bg="white", fg="#475569")
             btn.bind("<Enter>", _h); btn.bind("<Leave>", _l)
             
@@ -421,42 +426,39 @@ class MainShell(tk.Frame):
                     cmd()
                 btn.bind("<Button-1>", _wrap)
             else:
-                btn.config(fg="#94a3b8", cursor="")
+                btn.config(fg="#cbd5e1", cursor="")
         
-        for lbl, cmd in items:
-            _item(lbl, cmd)
-        # Position menu below avatar using .place() relative to MainShell
+        for lbl, cmd in items: _item(lbl, cmd)
+
         self.update_idletasks()
-        # Calculate coordinates relative to self (MainShell)
+        # Position relative to TopBar User area
         mx = event.widget.winfo_rootx() - self.winfo_rootx()
-        my = event.widget.winfo_rooty() - self.winfo_rooty() + event.widget.winfo_height() + 5
+        my = event.widget.winfo_rooty() - self.winfo_rooty() + event.widget.winfo_height() + 8
         
-        menu_w = 190
-        # Align menu right with the avatar
+        menu_w = 210
         mx = mx + event.widget.winfo_width() - menu_w
-        
         menu.place(x=mx, y=my, width=menu_w)
         
-        # Close on click away
-        def _on_click_away(e):
+        # Click-away logic
+        def _away(e):
             if not menu.winfo_exists(): return
             x, y = menu.winfo_rootx(), menu.winfo_rooty()
             w, h = menu.winfo_width(), menu.winfo_height()
             if not (x <= e.x_root <= x + w and y <= e.y_root <= y + h):
                 menu.destroy()
                 self.app.unbind_all("<Button-1>")
-        
-        self.app.bind_all("<Button-1>", _on_click_away)
+        self.app.bind_all("<Button-1>", _away)
 
-    def _tick_clock(self) -> None:
-        """Update the live clock label every second."""
+    def _update_clock(self) -> None:
+        """Luxury real-time clock update."""
         import datetime as _dt
-        if not self.winfo_exists():
-            return
+        if not self.winfo_exists(): return
         now = _dt.datetime.now()
         self._time_lbl.config(text=now.strftime("%H:%M:%S"))
-        self._date_lbl.config(text=now.strftime("%d/%m/%Y"))
-        self.after(1000, self._tick_clock)
+        # Luxury Format: 12 MAY, 2026
+        self._date_lbl.config(text=now.strftime("%d %b, %Y").upper())
+        self.after(1000, self._update_clock)
+
 
     def _pending_count(self) -> int:
         try:
@@ -564,10 +566,18 @@ class MainShell(tk.Frame):
         cv = tk.Canvas(sb, bg=SB_BG, highlightthickness=0)
         # We will pack this LATER at the end of _build_sidebar to ensure it fills middle space
         
-        # Mousewheel binding
+        # Mousewheel binding logic
         def _on_mousewheel(event):
-            cv.yview_scroll(int(-1*(event.delta/120)), "units")
-        cv.bind_all("<MouseWheel>", _on_mousewheel)
+            if cv.winfo_exists():
+                cv.yview_scroll(int(-1*(event.delta/120)), "units")
+        
+        def _bind_mousewheel(widget):
+            widget.bind("<MouseWheel>", _on_mousewheel)
+            for child in widget.winfo_children():
+                _bind_mousewheel(child)
+
+        cv.bind("<Enter>", lambda _: cv.bind_all("<MouseWheel>", _on_mousewheel))
+        cv.bind("<Leave>", lambda _: cv.unbind_all("<MouseWheel>"))
 
         nav_container = tk.Frame(cv, bg=SB_BG)
         cv.create_window((0, 0), window=nav_container, anchor="nw", 
@@ -595,12 +605,15 @@ class MainShell(tk.Frame):
 
         # 2. Canvas for nav items takes ALL remaining middle space
         cv.pack(side="top", fill="both", expand=True)
+        
+        # After building everything, bind mousewheel to the whole nav_container tree
+        _bind_mousewheel(nav_container)
 
     def _section_header(self, parent: tk.Frame, text: str) -> None:
         f = tk.Frame(parent, bg=SB_BG)
         f.pack(fill="x", pady=(10, 2)) # Compact headers
         lbl = tk.Label(f, text=text, bg=SB_BG, fg="#94a3b8",
-                      font=("Segoe UI", 7, "bold"), anchor="w", padx=28)
+                      font=("Segoe UI", 8, "bold"), anchor="w", padx=28)
         lbl.pack(fill="x")
         self._sidebar_texts.append(lbl)
 
@@ -614,15 +627,19 @@ class MainShell(tk.Frame):
         row = tk.Frame(wrap, bg=SB_BG, cursor="hand2")
         row.pack(fill="x")
 
-        # Left active pill
-        accent = tk.Canvas(row, bg=SB_BG, width=3, height=32, highlightthickness=0)
+        # Left active pill - Glow Effect
+        accent = tk.Canvas(row, bg=SB_BG, width=4, height=36, highlightthickness=0)
         accent.pack(side="left", padx=(0, 4))
         
-        inner = tk.Frame(row, bg=SB_BG, padx=8, pady=6)
+        inner = tk.Frame(row, bg=SB_BG, padx=12, pady=10)
         inner.pack(side="left", fill="x", expand=True)
 
+        # Icon support
+        tk.Label(inner, text=icon, bg=SB_BG, fg=SB_TEXT,
+                 font=("Segoe UI", 12)).pack(side="left")
+        
         txt = tk.Label(inner, text=label, bg=SB_BG, fg=SB_TEXT,
-                       font=("Segoe UI", 10, "bold"), anchor="w")
+                       font=("Segoe UI", 12, "bold"), anchor="w")
         txt.pack(side="left", padx=(12, 0))
         self._nav_labels.append(txt)
 
@@ -635,15 +652,15 @@ class MainShell(tk.Frame):
             if k != self._active_key:
                 row.config(bg=SB_HOVER)
                 inner.config(bg=SB_HOVER)
-                accent.config(bg=SB_HOVER)
-                txt.config(bg=SB_HOVER, fg=SB_TEXT_ACTIVE)
+                for w in inner.winfo_children(): 
+                    if isinstance(w, tk.Label): w.config(bg=SB_HOVER, fg=SB_TEXT_ACTIVE)
 
         def on_leave(_e, k=key):
             if k == self._active_key: return
             row.config(bg=SB_BG)
             inner.config(bg=SB_BG)
-            accent.config(bg=SB_BG)
-            txt.config(bg=SB_BG, fg=SB_TEXT)
+            for w in inner.winfo_children(): 
+                if isinstance(w, tk.Label): w.config(bg=SB_BG, fg=SB_TEXT)
 
         def on_click(_e, k=key):
             self._navigate(k)
@@ -655,9 +672,13 @@ class MainShell(tk.Frame):
 
     def _bottom_user_card(self, parent: tk.Frame) -> None:
         user = self.app.current_user
-        card = tk.Frame(parent, bg=SB_BG, padx=16, pady=16)
-        card.pack(side="bottom", fill="x")
-        card.config(highlightthickness=1, highlightbackground=SB_HOVER)
+        # High-fidelity user card
+        wrap = tk.Frame(parent, bg=SB_BG, padx=12, pady=16)
+        wrap.pack(side="bottom", fill="x")
+        
+        card = tk.Frame(wrap, bg="#f8fafc", padx=12, pady=12)
+        card.pack(fill="x")
+        card.config(highlightthickness=1, highlightbackground="#e2e8f0")
         
         # Avatar
         av_box = tk.Frame(card, bg=SB_BG)
@@ -669,11 +690,10 @@ class MainShell(tk.Frame):
         av.create_oval(26, 26, 34, 34, fill="#22c55e", outline=SB_BG, width=1)
         
         # Info
-        info = tk.Frame(card, bg=SB_BG)
+        info = tk.Frame(card, bg="#f8fafc")
         info.pack(side="left", fill="x", expand=True)
-        self._sidebar_texts.append(info)
-        tk.Label(info, text=user.full_name, bg=SB_BG, fg=SB_TEXT_ACTIVE, font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
-        tk.Label(info, text=user.role.upper(), bg=SB_BG, fg=SB_TEXT, font=("Segoe UI", 7, "bold"), anchor="w").pack(fill="x")
+        tk.Label(info, text=user.full_name, bg="#f8fafc", fg="#1e293b", font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
+        tk.Label(info, text=user.role.upper(), bg="#f8fafc", fg="#64748b", font=("Segoe UI", 7, "bold"), anchor="w").pack(fill="x")
 
     # ── Sidebar toggle ────────────────────────────────────────────────────────
     def _toggle_sidebar(self) -> None:
@@ -710,9 +730,9 @@ class MainShell(tk.Frame):
         # Deactivate old
         if self._active_key in self._nav_parts:
             p = self._nav_parts[self._active_key]
-            for w in (p["row"], p["inner"]):
-                w.config(bg=SB_BG)
-            p["text"].config(bg=SB_BG, fg=SB_TEXT, font=("Segoe UI", 10, "bold"))
+            for w in (p["row"], p["inner"]): w.config(bg=SB_BG)
+            for child in p["inner"].winfo_children():
+                if isinstance(child, tk.Label): child.config(bg=SB_BG, fg=SB_TEXT)
             p["accent"].config(bg=SB_BG)
             p["accent"].delete("all")
 
@@ -722,14 +742,14 @@ class MainShell(tk.Frame):
         if key in self._nav_parts:
             p = self._nav_parts[key]
             active_bg = SB_ACTIVE
-            for w in (p["row"], p["inner"]):
-                w.config(bg=active_bg)
-            p["text"].config(bg=active_bg, fg=SB_TEXT_ACTIVE, font=("Segoe UI", 10, "bold"))
+            for w in (p["row"], p["inner"]): w.config(bg=active_bg)
+            for child in p["inner"].winfo_children():
+                if isinstance(child, tk.Label): child.config(bg=active_bg, fg=SB_TEXT_ACTIVE)
             
             p["accent"].config(bg=active_bg)
             p["accent"].delete("all")
-            # Vertical pill indicator (Rounded feel via small offset)
-            p["accent"].create_rectangle(0, 6, 3, 26, fill=SB_ACCENT, outline="", width=0)
+            # Premium Glow Pill
+            p["accent"].create_rectangle(0, 4, 4, 32, fill=SB_ACCENT, outline="", width=0)
 
         # Breadcrumb update removed
 
@@ -769,6 +789,8 @@ class MainShell(tk.Frame):
                 frame = ReportFrame(self._content_frame, app.report_ctrl)
             elif key == "room_issues":
                 frame = RoomIssueManagementFrame(self._content_frame, app.feedback_ctrl)
+            elif key == "room_ratings":
+                frame = RoomRatingManagementFrame(self._content_frame, app.feedback_ctrl)
             elif key == "notifications":
                 frame = NotificationFrame(self._content_frame, app.notif_ctrl,
                                           app.current_user,
@@ -784,6 +806,8 @@ class MainShell(tk.Frame):
                     app.user_ctrl,
                     current_user=app.current_user,
                 )
+            elif key == "profile":
+                frame = ProfileFrame(self._content_frame, app.current_user, app.auth_ctrl)
             else:
                 frame = tk.Frame(self._content_frame, bg=C_BG)
                 tk.Label(frame, text=f"Trang '{key}' dang phat trien.",
@@ -808,6 +832,7 @@ class MainShell(tk.Frame):
         app.bind_all("<Control-d>",     lambda _: self._navigate("dashboard"))
         app.bind_all("<Control-b>",     lambda _: self._navigate("booking_form"))
         app.bind_all("<Control-l>",     lambda _: self._navigate("booking_list"))
+        app.bind_all("<Control-k>",     lambda _: self.search_ent.focus_set())
         app.bind_all("<Control-backslash>", lambda _: self._toggle_sidebar())
         app.bind_all("<F11>",
             lambda _: app.attributes("-fullscreen",
@@ -818,7 +843,7 @@ class MainShell(tk.Frame):
 
         def _unbind_all(_e):
             for seq in ["<Control-Home>", "<F5>", "<Control-d>", "<Control-b>", 
-                        "<Control-l>", "<Control-backslash>", "<F11>", "<Escape>"]:
+                        "<Control-l>", "<Control-k>", "<Control-backslash>", "<F11>", "<Escape>"]:
                 app.unbind_all(seq)
 
         self.bind("<Destroy>", _unbind_all)

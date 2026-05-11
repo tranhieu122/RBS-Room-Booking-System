@@ -268,29 +268,43 @@ class BookingListFrame(tk.Frame):
             confirm_dialog(self, "Chưa chọn", "Hãy chọn một bản ghi.", kind="warning", cancel_text=None)
             return
         if not confirm_dialog(self, "Xác nhận xóa",
-                              f"Bạn chắc chắn muốn xóa lịch [{bid}]?\n"
-                              "Thao tác này không thể hoàn tác.",
-                              ok_text="Xóa", kind="danger"):
+                               f"Bạn chắc chắn muốn xóa mục [{bid}]?\n"
+                               "Thao tác này không thể hoàn tác.",
+                               ok_text="Xóa", kind="danger"):
             return
         try:
-            self.booking_ctrl.delete_booking(bid, self.current_user)
+            if bid.startswith("rule_"):
+                if not self.schedule_ctrl: return
+                rule_id = int(bid.replace("rule_", ""))
+                self.schedule_ctrl.delete_rule(rule_id)
+                toast(self, "Đã xóa lịch dạy chu kỳ.", kind="success")
+            else:
+                self.booking_ctrl.delete_booking(bid, self.current_user)
+                toast(self, "Đã xóa lịch đặt phòng.", kind="success")
             self.refresh()
-            toast(self, "Da xoa lich dat phong.", kind="success")
         except (ValueError, PermissionError) as e:
-            messagebox.showerror("Loi", str(e))
+            confirm_dialog(self, "Lỗi", str(e), kind="error", cancel_text=None)
 
     def _edit_booking(self) -> None:
         bid = self._selected_id()
         if bid is None:
-            messagebox.showwarning("Chua chon", "Hay chon mot ban ghi.")
+            messagebox.showwarning("Chưa chọn", "Hãy chọn một bản ghi.")
             return
+        
+        # Check if it's a recurring rule
+        if bid.startswith("rule_"):
+            confirm_dialog(self, "Tính năng", 
+                           "Để chỉnh sửa Lịch dạy chu kỳ, vui lòng truy cập mục 'Lịch dạy chu kỳ' để có đầy đủ công cụ quản lý cấu hình.",
+                           kind="info", cancel_text=None)
+            return
+
         booking = self.booking_ctrl.get_booking(bid)
         if booking is None:
-            messagebox.showerror("Loi", "Khong tim thay ban ghi.")
+            messagebox.showerror("Lỗi", "Không tìm thấy bản ghi.")
             return
         if (self.current_user.role != "Admin"
                 and booking.user_id != self.current_user.user_id):
-            messagebox.showerror("Khong co quyen", "Ban chi co the sua lich cua chinh minh.")
+            messagebox.showerror("Không có quyền", "Bạn chỉ có thể sửa lịch của chính mình.")
             return
         _EditBookingDialog(self, booking, self.booking_ctrl,
                            self.room_ctrl, self.current_user,

@@ -125,8 +125,8 @@ class UserManagementFrame(tk.Frame):
         # Removed header for stability
 
         # ── Stat summary bar ─────────────────────────────────────────────────
-        stats_outer = tk.Frame(self, bg=C_BG, padx=20, pady=10)
-        stats_outer.pack(fill="x", pady=(0, 5))
+        stats_outer = tk.Frame(self, bg=C_BG)
+        stats_outer.pack(fill="x", padx=0, pady=(10, 5)) # Full width
         for i in range(5): stats_outer.columnconfigure(i, weight=1)
 
         stat_defs = [
@@ -139,28 +139,37 @@ class UserManagementFrame(tk.Frame):
         
         from gui.theme import make_card
         for i, (key, icon, label, bg, fg) in enumerate(stat_defs):
-            outer, chip = make_card(stats_outer, padx=15, pady=12, shadow=False)
-            outer.config(highlightthickness=1, highlightbackground="#e2e8f0")
-            outer.grid(row=0, column=i, sticky="nsew", padx=4)
-            chip.config(bg=bg)
+            outer, chip = make_card(stats_outer, padx=15, pady=15, shadow=True)
+            outer.grid(row=0, column=i, sticky="nsew", padx=10, pady=10)
             
-            top_f = tk.Frame(chip, bg=bg)
-            top_f.pack(fill="x")
-            tk.Label(top_f, text=icon, bg=bg, font=("Segoe UI", 16)).pack(side="left")
+            # Left icon badge with glow
+            badge = tk.Frame(chip, bg="#f8fafc", padx=10, pady=8)
+            badge.pack(side="left", padx=(0, 15))
+            tk.Label(badge, text=icon, bg="#f8fafc", font=("Segoe UI", 20)).pack()
             
-            val_lbl = tk.Label(top_f, text="0", bg=bg, fg=fg, font=("Segoe UI", 18, "bold"))
-            val_lbl.pack(side="right")
+            txt_f = tk.Frame(chip, bg=C_SURFACE)
+            txt_f.pack(side="left", fill="both", expand=True)
+            
+            val_lbl = tk.Label(txt_f, text="0", bg=C_SURFACE, fg=fg, font=("Segoe UI", 20, "bold"))
+            val_lbl.pack(anchor="w")
             self._stat_labels[key] = val_lbl
             
-            tk.Label(chip, text=label.upper(), bg=bg, fg="#64748b",
-                     font=("Segoe UI", 8, "bold")).pack(anchor="e", pady=(4,0))
+            tk.Label(txt_f, text=label.upper(), bg=C_SURFACE, fg=C_MUTED,
+                     font=("Segoe UI", 8, "bold")).pack(anchor="w")
+
+            # Hover Interaction
+            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c, highlightthickness=2)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER, highlightthickness=1)
+            chip.bind("<Enter>", _on_enter)
+            chip.bind("<Leave>", _on_leave)
 
         # ── Toolbar ──────────────────────────────────────────────────────────
         toolbar = tk.Frame(self, bg=C_BG)
-        toolbar.pack(fill="x", padx=20, pady=(0, 15))
+        toolbar.pack(fill="x", padx=10, pady=(10, 15))
         
         search_box(toolbar, self.search_var, placeholder="Tìm kiếm người dùng...",
-                   on_type=self.refresh, width=35).pack(side="left")
+                   on_type=self.refresh, width=40).pack(side="left", padx=10)
         
         tk.Frame(toolbar, bg=C_BORDER, width=1).pack(side="left", fill="y", padx=15)
         
@@ -174,9 +183,8 @@ class UserManagementFrame(tk.Frame):
         
         btn(toolbar, "Xóa Bỏ",   self._delete, variant="danger", icon="🗑️").pack(side="right")
 
-        wrap = tk.Frame(self, bg=C_SURFACE, highlightthickness=1,
-                        highlightbackground=C_BORDER, padx=14, pady=14)
-        wrap.pack(fill="both", expand=True, padx=20, pady=(0, 16))
+        wrap = tk.Frame(self, bg=C_SURFACE)
+        wrap.pack(fill="both", expand=True, padx=0, pady=(0, 0)) # Full width
 
         cols = ("ma", "username", "ten", "vai_tro", "email", "phone", "trang_thai")
         hdrs = ("Ma", "Username", "Ho ten", "Vai tro", "Email", "SDT", "Trang thai")

@@ -62,9 +62,8 @@ class ReportFrame(tk.Frame):
         pdf_btn.pack(side="left")
 
         # ── Date range filter panel ───────────────────────────────────────────
-        filter_panel = tk.Frame(self, bg="#eef2ff", highlightthickness=1,
-                                highlightbackground="#c7d2fe", padx=16, pady=10)
-        filter_panel.pack(fill="x", padx=20, pady=(6, 0))
+        filter_panel = tk.Frame(self, bg="#f1f5f9", padx=16, pady=12)
+        filter_panel.pack(fill="x", padx=0, pady=(0, 0)) # Full width
 
         tk.Label(filter_panel, text="🗓  Loc theo khoang thoi gian:",
                  bg="#eef2ff", fg="#4f46e5",
@@ -81,8 +80,10 @@ class ReportFrame(tk.Frame):
                            background=C_PRIMARY, foreground="white",
                            weekendbackground="white", weekendforeground="black",
                            state="readonly",
-                           borderwidth=1, font=("Segoe UI", 10))
+                           borderwidth=0, font=("Segoe UI", 10))
             e.pack(padx=6, pady=4)
+            # Ensure clicking the entry also opens the calendar
+            e.bind("<Button-1>", lambda _: e.drop_down())
             return e
 
         tk.Label(filter_panel, text="Tu:", bg="#eef2ff", fg="#4f46e5",
@@ -169,14 +170,11 @@ class ReportFrame(tk.Frame):
         self._render_body()
 
     def _reset_filter(self) -> None:
-        self._date_from.set("")
-        self._date_to.set("")
-        self._from_entry.delete(0, "end")
-        self._from_entry.insert(0, "YYYY-MM-DD")
-        self._from_entry.config(fg=C_MUTED)
-        self._to_entry.delete(0, "end")
-        self._to_entry.insert(0, "YYYY-MM-DD")
-        self._to_entry.config(fg=C_MUTED)
+        today = dt.date.today().isoformat()
+        self._date_from.set(today)
+        self._date_to.set(today)
+        self._from_entry.set_date(dt.date.today())
+        self._to_entry.set_date(dt.date.today())
         self._filter_info.config(text="")
         self._render_body()
 
@@ -252,34 +250,36 @@ class ReportFrame(tk.Frame):
     def _draw_stat_cards(self, body: tk.Frame,
                          date_from: str = "", date_to: str = "") -> None:
         panel = tk.Frame(body, bg=C_BG)
-        panel.pack(fill="x", padx=20, pady=(5, 2))
+        panel.pack(fill="x", padx=0, pady=(10, 5)) # Full width
         summary: dict[str, object] = self.report_ctrl.build_dashboard(
             date_from=date_from, date_to=date_to)
         for idx, (label, value) in enumerate(summary.items()):
             bg, fg, icon = CARD_PALETTE[idx % len(CARD_PALETTE)]
 
-            # Indigo-tinted shadow wrapper
-            shadow = tk.Frame(panel, bg="#c7d2fe")
-            shadow.grid(row=idx // 3, column=idx % 3,
-                        sticky="nsew", padx=6, pady=6)
-            card = tk.Frame(shadow, bg=bg, padx=18, pady=16)
-            card.pack(fill="both", expand=True, padx=(0, 3), pady=(0, 4))
+            outer, chip = make_card(panel, padx=20, pady=18, shadow=True)
+            outer.grid(row=idx // 3, column=idx % 3, sticky="nsew", padx=10, pady=10)
+            
+            # Left icon badge with glow
+            badge = tk.Frame(chip, bg="#f8fafc", padx=12, pady=10)
+            badge.pack(side="left", padx=(0, 20))
+            tk.Label(badge, text=icon, bg="#f8fafc", font=("Segoe UI", 24)).pack()
+            
+            txt_f = tk.Frame(chip, bg=C_SURFACE)
+            txt_f.pack(side="left", fill="both", expand=True)
+            
+            val_lbl = tk.Label(txt_f, text=str(value), bg=C_SURFACE, fg=fg, 
+                               font=("Segoe UI", 28, "bold"))
+            val_lbl.pack(anchor="w")
+            
+            tk.Label(txt_f, text=label.upper(), bg=C_SURFACE, fg=C_MUTED,
+                     font=("Segoe UI", 9, "bold")).pack(anchor="w")
 
-            top = tk.Frame(card, bg=bg)
-            top.pack(fill="x")
-
-            # Icon circle
-            ic = tk.Canvas(top, width=46, height=46, bg=bg,
-                           highlightthickness=0)
-            ic.pack(side="left")
-            ic.create_oval(2, 2, 44, 44, fill=fg, outline="")
-            ic.create_text(23, 23, text=icon, font=("Segoe UI", 18),
-                           fill="white")
-
-            tk.Label(top, text=str(value), bg=bg, fg=fg,
-                     font=("Segoe UI", 30, "bold")).pack(side="right", anchor="s")
-            tk.Label(card, text=label, bg=bg, fg="#475569",
-                     font=("Segoe UI", 9, "bold")).pack(anchor="w", pady=(8, 0))
+            # Hover Interaction
+            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c, highlightthickness=2)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER, highlightthickness=1)
+            chip.bind("<Enter>", _on_enter)
+            chip.bind("<Leave>", _on_leave)
         for col in range(3):
             panel.grid_columnconfigure(col, weight=1, uniform="card")
 
@@ -296,9 +296,9 @@ class ReportFrame(tk.Frame):
 
         # Two-column layout
         two_col = tk.Frame(body, bg=C_BG)
-        two_col.pack(fill="x", padx=20, pady=(0, 16))
-        two_col.columnconfigure(0, weight=4) # Table gets more width
-        two_col.columnconfigure(1, weight=3) # Chart gets less width
+        two_col.pack(fill="x", padx=10, pady=(0, 16))
+        two_col.columnconfigure(0, weight=5) # Table gets more width
+        two_col.columnconfigure(1, weight=4) # Chart gets less width
 
         # ── Left: summary table ─────────────────────────────────────────────
         left_outer, left = make_card(two_col, padx=15, pady=15, shadow=True)

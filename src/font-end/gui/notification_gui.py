@@ -76,29 +76,31 @@ class NotificationFrame(tk.Frame):
 
         # ── Toolbar: Search & Filter ──────────────────────────────────────────
         toolbar = tk.Frame(body, bg=C_BG)
-        toolbar.pack(fill="x", pady=(0, 12))
+        toolbar.pack(fill="x", pady=(0, 15))
 
-        search_box(toolbar, self._search_var, placeholder="Tim kiem thong bao...",
-                   on_type=self.refresh, width=30).pack(side="left")
+        search_box(toolbar, self._search_var, placeholder="Tìm kiếm thông báo...",
+                   on_type=self.refresh, width=32).pack(side="left")
 
         filter_f = tk.Frame(toolbar, bg=C_BG)
         filter_f.pack(side="left", padx=20)
         
-        filters = [("Tat ca", "All"), ("Chua doc", "Unread"), 
-                   ("Dat phong", "Booking"), ("Thiet bi", "Equipment")]
+        # Modern Chips for Filtering
+        filters = [("Tất cả", "All"), ("Chưa đọc", "Unread"), 
+                   ("Đặt phòng", "Booking"), ("Thiết bị", "Equipment")]
         for lbl, val in filters:
-            b = tk.Radiobutton(filter_f, text=lbl, variable=self._filter_var,
-                               value=val, indicatoron=0, padx=12, pady=4,
-                               font=("Segoe UI", 9), bg=C_SURFACE, selectcolor="#eef2ff",
-                               command=self.refresh, relief="flat", borderwidth=1)
-            b.pack(side="left", padx=2)
+            def _set_f(v=val):
+                self._filter_var.set(v)
+                self.refresh()
+            
+            # Using ghost buttons as chips
+            btn(filter_f, lbl, _set_f, variant="ghost").pack(side="left", padx=4)
 
         actions_f = tk.Frame(toolbar, bg=C_BG)
         actions_f.pack(side="right")
         
-        btn(actions_f, "Danh dau tat ca", self._mark_all_read,
+        btn(actions_f, "Đánh dấu tất cả", self._mark_all_read,
             variant="ghost", icon="✅").pack(side="left", padx=2)
-        btn(actions_f, "Don dep", self._clear_read,
+        btn(actions_f, "Dọn dẹp", self._clear_read,
             variant="ghost", icon="🗑️").pack(side="left", padx=2)
 
         # ── Scrollable notification list ──────────────────────────────────────
@@ -107,64 +109,85 @@ class NotificationFrame(tk.Frame):
         outer.pack(fill="both", expand=True)
 
         self._canvas = tk.Canvas(outer, bg=C_SURFACE, highlightthickness=0)
+        self._canvas.pack(side="left", fill="both", expand=True)
+
         vsb = ttk.Scrollbar(outer, orient="vertical",
                             command=self._canvas.yview)  # type: ignore[arg-type]
+        vsb.pack(side="right", fill="y")
+        self._canvas.configure(yscrollcommand=vsb.set)
+
         self._list_frame = tk.Frame(self._canvas, bg=C_SURFACE)
+        self._canvas.create_window((0, 0), window=self._list_frame, anchor="nw", tags="list_win")
+
+        def _on_canvas_configure(e: tk.Event) -> None:
+            # Match list_frame width to canvas width for responsiveness
+            self._canvas.itemconfig("list_win", width=e.width) # type: ignore[union-attr]
+
+        self._canvas.bind("<Configure>", _on_canvas_configure)
+        
         self._list_frame.bind(
             "<Configure>",
             lambda _: self._canvas.configure(  # type: ignore[union-attr]
                 scrollregion=self._canvas.bbox("all")))  # type: ignore[union-attr]
-        self._canvas.create_window((0, 0), window=self._list_frame, anchor="nw")
-        self._canvas.configure(yscrollcommand=vsb.set)
-        self._canvas.pack(side="left", fill="both", expand=True)
-        vsb.pack(side="right", fill="y")
+
         self._canvas.bind(
             "<MouseWheel>",
             lambda e: self._canvas.yview_scroll(-1 * (e.delta // 120), "units"))  # type: ignore[union-attr]
 
     def _build_compose(self, parent: tk.Frame) -> None:
+        # High-fidelity composer card
         frm = tk.Frame(parent, bg=C_SURFACE, highlightthickness=1,
-                       highlightbackground=C_BORDER, padx=18, pady=14)
-        frm.pack(fill="x", pady=(0, 4))
+                       highlightbackground=C_BORDER, padx=24, pady=20)
+        frm.pack(fill="x", pady=(0, 16))
 
-        tk.Label(frm, text="✉ Gui thong bao moi",
+        header = tk.Frame(frm, bg=C_SURFACE)
+        header.pack(fill="x", pady=(0, 15))
+        
+        tk.Label(header, text="✉ Gửi thông báo mới",
                  bg=C_SURFACE, fg="#1e1b4b",
-                 font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(0, 10))
+                 font=("Segoe UI", 12, "bold")).pack(side="left")
+        
+        tk.Label(header, text="Phát tin tức đến toàn hệ thống",
+                 bg=C_SURFACE, fg=C_MUTED,
+                 font=("Segoe UI", 9)).pack(side="left", padx=12)
 
-        # Target row
-        r1 = tk.Frame(frm, bg=C_SURFACE)
-        r1.pack(fill="x", pady=(0, 6))
-        tk.Label(r1, text="Gui den:", bg=C_SURFACE, fg=C_TEXT,
-                 font=F_BODY_B, width=10, anchor="w").pack(side="left")
-        self._target_var = tk.StringVar(value="Tat ca")
-        ttk.Combobox(r1, textvariable=self._target_var,
-                     values=["Tat ca", "Giang vien", "Sinh vien"],
+        # Main Form Area
+        form = tk.Frame(frm, bg=C_SURFACE)
+        form.pack(fill="x")
+        
+        # Left side: meta
+        left = tk.Frame(form, bg=C_SURFACE)
+        left.pack(side="left", fill="y", padx=(0, 24))
+        
+        tk.Label(left, text="Gửi đến:", bg=C_SURFACE, fg=C_TEXT, font=F_BODY_B).pack(anchor="w")
+        self._target_var = tk.StringVar(value="Tất cả")
+        ttk.Combobox(left, textvariable=self._target_var,
+                     values=["Tất cả", "Giảng viên", "Sinh viên"],
                      state="readonly", width=18,
-                     font=("Segoe UI", 10)).pack(side="left", padx=(4, 0))
-
-        # Title row
-        r2 = tk.Frame(frm, bg=C_SURFACE)
-        r2.pack(fill="x", pady=(0, 6))
-        tk.Label(r2, text="Tieu de:", bg=C_SURFACE, fg=C_TEXT,
-                 font=F_BODY_B, width=10, anchor="w").pack(side="left")
+                     font=("Segoe UI", 10)).pack(anchor="w", pady=(4, 12))
+        
+        tk.Label(left, text="Tiêu đề:", bg=C_SURFACE, fg=C_TEXT, font=F_BODY_B).pack(anchor="w")
         self._title_var = tk.StringVar()
-        tk.Entry(r2, textvariable=self._title_var, font=("Segoe UI", 10),
+        tk.Entry(left, textvariable=self._title_var, font=("Segoe UI", 10),
                  relief="flat", bg="#f8fafc", fg=C_TEXT,
-                 width=52).pack(side="left", padx=(4, 0), ipady=4)
+                 width=22).pack(anchor="w", pady=4, ipady=6)
 
-        # Message row
-        r3 = tk.Frame(frm, bg=C_SURFACE)
-        r3.pack(fill="x", pady=(0, 8))
-        tk.Label(r3, text="Noi dung:", bg=C_SURFACE, fg=C_TEXT,
-                 font=F_BODY_B, width=10, anchor="nw").pack(
-            side="left", pady=(4, 0))
-        self._msg_text = tk.Text(r3, font=("Segoe UI", 10), height=3,
+        # Right side: message
+        right = tk.Frame(form, bg=C_SURFACE)
+        right.pack(side="left", fill="both", expand=True)
+        
+        tk.Label(right, text="Nội dung:", bg=C_SURFACE, fg=C_TEXT, font=F_BODY_B).pack(anchor="w")
+        self._msg_text = tk.Text(right, font=("Segoe UI", 10), height=4,
                                   relief="flat", bg="#f8fafc", fg=C_TEXT,
-                                  width=52, wrap="word")
-        self._msg_text.pack(side="left", padx=(4, 0), pady=(4, 0))
+                                  wrap="word", padx=10, pady=8)
+        self._msg_text.pack(fill="both", expand=True, pady=4)
 
-        btn(frm, "Gui thong bao", self._send,
-            variant="primary", icon="📨").pack(anchor="e", pady=(4, 0))
+        # Footer Actions
+        footer = tk.Frame(frm, bg=C_SURFACE)
+        footer.pack(fill="x", pady=(15, 0))
+        
+        btn(footer, "Gửi thông báo ngay", self._send,
+            variant="primary", icon="📨").pack(side="right")
 
     def _send(self) -> None:
         title = self._title_var.get().strip()
@@ -239,18 +262,28 @@ class NotificationFrame(tk.Frame):
             self._badge_lbl.pack(side="right", padx=16, pady=10)
 
         if not notifs:
-            empty_frame = tk.Frame(self._list_frame, bg=C_SURFACE, pady=40)
-            empty_frame.pack(fill="x")
+            # Centered empty state
+            self.update_idletasks()
+            h = self._canvas.winfo_height() or 400
+            
+            empty_frame = tk.Frame(self._list_frame, bg=C_SURFACE)
+            # FORCE safety: ensure py is a positive integer even if h is tiny
+            try:
+                py = max(40, int(float(h)/2 - 100))
+            except Exception:
+                py = 60
+            empty_frame.pack(fill="both", expand=True, pady=(py, 0))
+            
             tk.Label(empty_frame, text="🔔", bg=C_SURFACE,
-                     font=("Segoe UI", 36)).pack()
+                     font=("Segoe UI", 48), fg="#e2e8f0").pack()
             tk.Label(empty_frame,
-                     text="Khong co thong bao nao",
+                     text="Không có thông báo nào",
                      bg=C_SURFACE, fg=C_DARK,
-                     font=("Segoe UI", 12, "bold")).pack(pady=(8, 2))
+                     font=("Segoe UI", 16, "bold")).pack(pady=(12, 4))
             tk.Label(empty_frame,
-                     text="Cac thong bao moi se hien thi o day",
+                     text="Chúng tôi sẽ gửi thông tin quan trọng đến đây",
                      bg=C_SURFACE, fg=C_MUTED,
-                     font=("Segoe UI", 10)).pack()
+                     font=("Segoe UI", 11)).pack()
             return
 
         for n in notifs:
@@ -340,11 +373,16 @@ class NotificationFrame(tk.Frame):
         tk.Label(top, text=rel, bg=row_bg, fg=C_MUTED,
                  font=("Segoe UI", 8, "italic")).pack(side="right")
 
-        # Message preview (max 2 lines)
+        # Message preview (Responsive wrapping)
         msg = n.get("message", "") # type: ignore
-        tk.Label(content, text=msg, bg=row_bg, fg=C_TEXT, # type: ignore
-                 font=F_BODY, wraplength=700,
-                 justify="left", anchor="w").pack(fill="x", pady=(3, 0))
+        lbl_msg = tk.Label(content, text=msg, bg=row_bg, fg=C_TEXT, # type: ignore
+                           font=F_BODY, justify="left", anchor="w", wrap="word")
+        lbl_msg.pack(fill="x", pady=(3, 0))
+        
+        # Bind message label to update wrap length dynamically
+        def _update_wrap(e: tk.Event, l=lbl_msg):
+            l.config(wraplength=e.width - 40)
+        content.bind("<Configure>", _update_wrap)
 
         # Bottom row: sender chip + "Danh dau da doc" action
         bottom = tk.Frame(content, bg=row_bg)

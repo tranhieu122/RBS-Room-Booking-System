@@ -8,7 +8,7 @@ from tkcalendar import DateEntry  # type: ignore[import-untyped]
 from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_MUTED,
                        F_INPUT, make_tree, fill_tree, with_scrollbar, # type: ignore
                        page_header, btn, search_box, labeled_entry, get_q,
-                       animate_count)
+                       animate_count, confirm_dialog)
 
 
 class EquipmentDialog(tk.Toplevel):
@@ -165,8 +165,8 @@ class EquipmentManagementFrame(tk.Frame):
         # Removed internal header to prevent shifting
 
         # ── Stat summary bar ─────────────────────────────────────────────────
-        stats_outer = tk.Frame(self, bg=C_BG, padx=20, pady=10)
-        stats_outer.pack(fill="x", pady=(0, 5))
+        stats_outer = tk.Frame(self, bg=C_BG)
+        stats_outer.pack(fill="x", padx=0, pady=(10, 5)) # Full width
         for i in range(5): stats_outer.columnconfigure(i, weight=1)
 
         stat_defs = [
@@ -179,36 +179,37 @@ class EquipmentManagementFrame(tk.Frame):
         
         from gui.theme import make_card
         for i, (key, icon, label, bg, fg) in enumerate(stat_defs):
-            outer, chip = make_card(stats_outer, padx=16, pady=14, shadow=False)
-            outer.config(highlightthickness=1, highlightbackground="#e2e8f0")
-            outer.grid(row=0, column=i, sticky="nsew", padx=6)
-            chip.config(bg="white") # Keep card white, icon area colored
+            outer, chip = make_card(stats_outer, padx=15, pady=15, shadow=True)
+            outer.grid(row=0, column=i, sticky="nsew", padx=8, pady=10)
             
-            # Icon Circle
-            ic_f = tk.Frame(chip, bg=bg, width=40, height=40)
-            ic_f.pack_propagate(False)
-            ic_f.pack(side="left")
-            tk.Label(ic_f, text=icon, bg=bg, font=("Segoe UI", 14)).pack(expand=True)
+            # Left icon badge with glow
+            badge = tk.Frame(chip, bg="#f8fafc", padx=10, pady=8)
+            badge.pack(side="left", padx=(0, 15))
+            tk.Label(badge, text=icon, bg="#f8fafc", font=("Segoe UI", 20)).pack()
             
-            # Info container
-            info_f = tk.Frame(chip, bg="white")
-            info_f.pack(side="left", fill="both", expand=True, padx=(12, 0))
+            txt_f = tk.Frame(chip, bg=C_SURFACE)
+            txt_f.pack(side="left", fill="both", expand=True)
             
-            tk.Label(info_f, text=label, bg="white", fg="#94a3b8",
-                     font=("Segoe UI", 7, "bold")).pack(anchor="w")
-            
-            val_lbl = tk.Label(info_f, text="0", bg="white", fg="#1e293b",
-                               font=("Segoe UI", 16, "bold"))
+            val_lbl = tk.Label(txt_f, text="0", bg=C_SURFACE, fg=fg, font=("Segoe UI", 20, "bold"))
             val_lbl.pack(anchor="w")
             self._stat_labels[key] = val_lbl
+            
+            tk.Label(txt_f, text=label, bg=C_SURFACE, fg=C_MUTED,
+                     font=("Segoe UI", 7, "bold")).pack(anchor="w")
+
+            # Hover Interaction
+            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c, highlightthickness=2)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER, highlightthickness=1)
+            chip.bind("<Enter>", _on_enter)
+            chip.bind("<Leave>", _on_leave)
 
         # ── Toolbar ──────────────────────────────────────────────────────────
         toolbar = tk.Frame(self, bg=C_BG)
-        toolbar.pack(fill="x", padx=20, pady=(0, 15))
-
-        # Search box
+        toolbar.pack(fill="x", padx=10, pady=(10, 15))
+        
         search_box(toolbar, self.search_var, placeholder="Tìm kiếm trang thiết bị...",
-                   on_type=self.refresh, width=32).pack(side="left")
+                   on_type=self.refresh, width=32).pack(side="left", padx=10)
 
         # Room filter
         tk.Label(toolbar, text="Phòng:", bg=C_BG, fg=C_MUTED,
@@ -234,9 +235,8 @@ class EquipmentManagementFrame(tk.Frame):
                                     font=("Segoe UI", 9))
         self._status_lbl.pack(side="right", padx=8)
 
-        wrap = tk.Frame(self, bg=C_SURFACE, highlightthickness=1,
-                        highlightbackground=C_BORDER, padx=14, pady=14)
-        wrap.pack(fill="both", expand=True, padx=20, pady=(0, 16))
+        wrap = tk.Frame(self, bg=C_SURFACE)
+        wrap.pack(fill="both", expand=True, padx=0, pady=(0, 0)) # Full width
 
         cols = ("ma", "ten", "loai", "phong", "trang_thai", "ngay_mua")
         hdrs = ("Ma TB", "Ten thiet bi", "Loai", "Phong", "Trang thai", "Ngay mua")

@@ -391,91 +391,84 @@ class ScheduleFrame(tk.Frame):
             date_str = f"{date_for_col.day}/{date_for_col.month}" # type: ignore
             is_today = (ci == today_col)
             
-            # Subtle highlight for today
-            hdr_bg = C_PRIMARY
-            inner_bg = C_PRIMARY
-            accent_fg = "#a5b4fc" if is_today else "#818cf8"
+            hdr_bg = "#4f46e5" if is_today else "#1e293b"
+            accent_fg = "#c7d2fe" if is_today else "#94a3b8"
             
-            hdr_f = tk.Frame(gf, bg=C_BORDER, padx=0, pady=0)
+            hdr_f = tk.Frame(gf, bg=hdr_bg, padx=12, pady=12)
             hdr_f.grid(row=0, column=ci + 1, sticky="nsew", padx=1, pady=1)
-            gf.columnconfigure(ci + 1, minsize=150, weight=1)
-            
-            inner_hdr = tk.Frame(hdr_f, bg=C_PRIMARY if is_today else "#1e293b", pady=14)
-            inner_hdr.pack(fill="both", expand=True)
-            
-            # Use a unified container for text to fix vertical alignment
-            text_container = tk.Frame(inner_hdr, bg=C_PRIMARY if is_today else "#1e293b")
-            text_container.pack(expand=True)
-            
-            tk.Label(text_container, text=day.upper(), 
-                     bg=inner_bg, fg="white" if is_today else "#a5b4fc",
-                     font=("Segoe UI", 9, "bold")).pack()
-            tk.Label(text_container, text=date_str,
-                     bg=inner_bg, fg=accent_fg,
-                     font=("Segoe UI", 8)).pack()
+            gf.columnconfigure(ci + 1, minsize=165, weight=1)
 
-        # ── Shift Labels (Rows - Lighter background)
+            tk.Label(hdr_f, text=day.upper(), bg=hdr_bg, fg=accent_fg,
+                     font=("Segoe UI", 8, "bold")).pack()
+            tk.Label(hdr_f, text=date_str, bg=hdr_bg, fg="white",
+                     font=("Segoe UI", 18, "bold")).pack()
+
+        # ── Time Slots & Grid Cells
         for ri, (shift_lbl, slot_key) in enumerate(zip(SLOTS_LBL, SLOT_KEYS)):
-            side_f = tk.Frame(gf, bg="#1e293b", padx=1, pady=1)
+            # Row header
+            side_f = tk.Frame(gf, bg="#1e293b", padx=12, pady=12)
             side_f.grid(row=ri + 1, column=0, sticky="nsew", padx=1, pady=1)
-            gf.rowconfigure(ri + 1, minsize=MIN_SLOT_H) 
-            
-            inner_side = tk.Frame(side_f, bg="#334155", pady=18)
-            inner_side.pack(fill="both", expand=True)
-            
-            tk.Label(inner_side, text=shift_lbl.split("\n")[0], 
-                     bg="#334155", fg="#f1f5f9",
-                     font=("Segoe UI", 9, "bold")).pack()
-            tk.Label(inner_side, text=shift_lbl.split("\n")[1],
-                     bg="#334155", fg="#94a3b8",
+            gf.rowconfigure(ri + 1, minsize=120, weight=1)
+
+            tk.Label(side_f, text=shift_lbl.split("\n")[0], bg="#1e293b", fg="white",
+                     font=("Segoe UI", 10, "bold")).pack()
+            tk.Label(side_f, text=shift_lbl.split("\n")[1], bg="#1e293b", fg="#94a3b8",
                      font=("Segoe UI", 8)).pack()
 
             for ci, day in enumerate(DAYS):
                 entries = lookup.get((day, slot_key), []) # type: ignore
                 is_today_col = (ci == today_col)
+                date_for_cell = mon + dt.timedelta(days=ci) # type: ignore
+                date_iso = date_for_cell.isoformat() # type: ignore
                 
-                # Subtle border color
+                # Cell container
                 cell_outer = tk.Frame(gf, bg=GRID_BORDER, padx=1, pady=1)
                 cell_outer.grid(row=ri + 1, column=ci + 1, sticky="nsew", padx=1, pady=1)
                 
+                bg = "#fefce8" if is_today_col else "white"
+                cell = tk.Frame(cell_outer, bg=bg, cursor="hand2" if entries else "")
+                cell.pack(fill="both", expand=True)
+                
                 if entries:
-                    bg, fg = CELL_COLORS.get(entries[0][1], ("#e0f2fe", "#0369a1")) # type: ignore
-                    accent = CELL_ACCENT.get(entries[0][1], "#3b82f6") # type: ignore
+                    main_label, main_status = entries[0]
+                    s_bg, s_fg = CELL_COLORS.get(main_status, ("#f1f5f9", "#475569"))
+                    accent = CELL_ACCENT.get(main_status, "#cbd5e1")
                     
-                    inner_cell = tk.Frame(cell_outer, bg=bg, cursor="hand2")
-                    inner_cell.pack(fill="both", expand=True)
+                    # High-end card design
+                    tk.Frame(cell, bg=accent, width=4).pack(side="left", fill="y")
                     
-                    tk.Frame(inner_cell, bg=accent, width=4).pack(side="left", fill="y")
+                    inner = tk.Frame(cell, bg=bg, padx=12, pady=10)
+                    inner.pack(fill="both", expand=True)
                     
-                    content_f = tk.Frame(inner_cell, bg=bg, padx=12, pady=10)
-                    content_f.pack(fill="both", expand=True)
+                    # Status Badge (Pill style)
+                    badge = tk.Frame(inner, bg=s_bg, padx=6, pady=2)
+                    badge.pack(anchor="nw")
+                    tk.Label(badge, text=main_status.upper(), bg=s_bg, fg=s_fg,
+                             font=("Segoe UI", 7, "bold")).pack()
                     
-                    label_text = entries[0][0] # type: ignore
-                    if len(entries) > 1: # type: ignore
-                        label_text = f"{label_text}\n(+{len(entries)-1} khác)"
+                    # Subject / Label
+                    tk.Label(inner, text=main_label, bg=bg, fg="#1e293b",
+                             font=("Segoe UI", 10, "bold"), justify="left", anchor="nw",
+                             wraplength=140).pack(fill="both", expand=True, pady=(4, 0))
                     
-                    tk.Label(content_f, text=label_text, bg=bg, fg=fg,
-                             font=("Segoe UI", 10, "bold"), justify="left",
-                             wraplength=140).pack(anchor="nw")
-                    
-                    tk.Label(content_f, text=entries[0][1].upper(), # type: ignore
-                             bg=bg, fg=accent, font=("Segoe UI", 8, "bold")).pack(anchor="sw", side="bottom")
+                    if len(entries) > 1:
+                        tk.Label(inner, text=f"+ {len(entries)-1} lịch khác...",
+                                 bg=bg, fg="#6366f1", font=("Segoe UI", 8, "italic")).pack(anchor="sw")
 
-                    def _on_ent(e, f=inner_cell): f.config(bg="#f1f5f9")
-                    def _on_lev(e, f=inner_cell, b=bg): f.config(bg=b)
+                    # Tooltip & Detail
+                    _cell_tooltip(cell, entries, date_iso, slot_key)
                     
-                    inner_cell.bind("<Enter>", _on_ent)
-                    inner_cell.bind("<Leave>", _on_lev)
-                    
-                    date_for_cell = mon + dt.timedelta(days=ci) # type: ignore
-                    date_str = date_for_cell.strftime("%d/%m/%Y") # type: ignore
-                    cell_info = list(entries) # type: ignore
-                    
-                    def _show_detail(e: object, i=cell_info, ds=date_str, dn=day, sl=shift_lbl) -> None:
-                         self._show_cell_detail(i, ds, dn, sl)
+                    def _show_detail(e: object, i=list(entries), ds=date_iso, dn=day, sl=shift_lbl) -> None:
+                        self._show_cell_detail(i, ds, dn, sl)
+                    cell.bind("<Button-1>", _show_detail)
 
-                    inner_cell.bind("<Button-1>", _show_detail)
-                    _cell_tooltip(inner_cell, cell_info, date_str, SLOT_KEYS[ri])
+                    # Interactions for occupied cells
+                    def _on_cell_enter(e, w=cell, b=bg): 
+                        if entries: w.config(bg="#f1f5f9")
+                    def _on_cell_leave(e, w=cell, b=bg): w.config(bg=b)
+                    
+                    cell.bind("<Enter>", _on_cell_enter, add="+")
+                    cell.bind("<Leave>", _on_cell_leave, add="+")
                 else:
                     # Today column highlight in grid
                     bg = "#fefce8" if is_today_col else "#ffffff"
@@ -565,15 +558,3 @@ class ScheduleFrame(tk.Frame):
         _stat_chip(chips_f, "⏳", "Chờ duyệt",      str(pending),        "#fef3c7", "#b45309", 2, "#f59e0b")
         _stat_chip(chips_f, "❌", "Từ chối",        str(rejected),       "#fdf2f8", "#db2777", 3, "#ec4899")
         _stat_chip(chips_f, "📈", "Tỷ lệ sử dụng",  f"{rate}%",          "#f0f9ff", "#0369a1", 4)
-
-        # Tips row
-        tip_f = tk.Frame(self._stats_bar, bg="#f8fafc",
-                         highlightthickness=1, highlightbackground="#e2e8f0",
-                         padx=14, pady=7)
-        tip_f.pack(fill="x", padx=14, pady=(0, 10))
-        tk.Label(tip_f,
-                 text="💡  Click vào ô lịch để xem chi tiết  •  "
-                      "Hover để xem nhanh  •  "
-                      "Dùng bộ lọc 'Phòng' để thu hẹp kết quả",
-                 bg="#f8fafc", fg="#94a3b8",
-                 font=("Segoe UI", 8)).pack(anchor="w")

@@ -162,11 +162,13 @@ class DashboardFrame(tk.Frame):
             user_name = self.current_user.full_name if self.current_user else "Quản trị viên"
             
             # Welcome Text
-            self.hero_cv.create_text(60, 80, text=f"{greeting}, {user_name} 👋", 
-                                    font=("Segoe UI", 36, "bold"), fill="white", anchor="w")
+            self.hero_cv.create_text(60, 75, text=f"{greeting},", 
+                                    font=("Segoe UI", 24), fill="#e0e7ff", anchor="w")
+            self.hero_cv.create_text(60, 115, text=f"{user_name} 👋", 
+                                    font=("Segoe UI", 42, "bold"), fill="white", anchor="w")
             
-            self.hero_cv.create_text(60, 130, text="Hệ thống đã sẵn sàng. Bạn có 3 yêu cầu mới cần xử lý.", 
-                                    font=("Segoe UI", 13), fill="#e0e7ff", anchor="w")
+            self.hero_cv.create_text(60, 165, text="Hệ thống đã sẵn sàng cho ngày làm việc mới của bạn.", 
+                                    font=("Segoe UI", 12), fill="#c7d2fe", anchor="w")
             
             # Action Button Overlay (Glass)
             self.hero_cv.create_rectangle(60, 165, 240, 205, fill="white", outline="white", width=1, stipple="gray25")
@@ -273,34 +275,38 @@ class DashboardFrame(tk.Frame):
         side = tk.Frame(parent, bg=C_BG)
         side.grid(row=0, column=1, sticky="nsew")
         
-        # 1. Quick Actions Card
-        q_outer, q_card = make_card(side, padx=20, pady=18, shadow=True)
+        # 1. Quick Actions Grid - Premium Hub Style
+        q_outer, q_card = make_card(side, padx=22, pady=20, shadow=True)
         q_outer.pack(fill="x", pady=(0, 15))
         
-        tk.Label(q_card, text="Thao tác nhanh", font=("Segoe UI", 11, "bold"), fg=C_DARK, bg=C_SURFACE).pack(anchor="w", pady=(0, 15))
+        tk.Label(q_card, text="DANH MỤC QUẢN TRỊ", font=("Segoe UI", 10, "bold"), fg=C_PRIMARY, bg=C_SURFACE).pack(anchor="w", pady=(0, 15))
+        
+        hub_grid = tk.Frame(q_card, bg=C_SURFACE)
+        hub_grid.pack(fill="x")
+        hub_grid.columnconfigure(0, weight=1); hub_grid.columnconfigure(1, weight=1)
         
         actions = [
-            ("Đặt phòng học", "📝", "booking_form", C_PRIMARY),
-            ("Quản lý thiết bị", "🔧", "equipment", "#6366f1"),
-            ("Xem báo cáo", "📊", "report", "#059669"),
-            ("Gửi thông báo", "🔔", "notifications", "#d97706"),
+            ("Lịch Trống", "📅", "room_management", "#3b82f6", "Kiểm tra phòng"),
+            ("Thành Viên", "👥", "user_management", "#6366f1", "Quản lý nhân sự"),
+            ("Thiết Bị", "🔧", "equipment", "#059669", "Kho trang thiết bị"),
+            ("Thống Kê", "📈", "report", "#d97706", "Báo cáo phân tích"),
         ]
         
-        for text, icon, key, color in actions:
-            f = tk.Frame(q_card, bg=C_SURFACE, cursor="hand2")
-            f.pack(fill="x", pady=4)
+        for i, (text, icon, key, color, desc) in enumerate(actions):
+            tile = tk.Frame(hub_grid, bg="#f8fafc", cursor="hand2", padx=10, pady=12)
+            tile.grid(row=i//2, column=i%2, sticky="nsew", padx=5, pady=5)
             
-            lbl_ico = tk.Label(f, text=icon, font=("Segoe UI", 12), fg=color, bg=C_SURFACE, width=3)
-            lbl_ico.pack(side="left")
-            
-            lbl_txt = tk.Label(f, text=text, font=("Segoe UI", 9, "bold"), fg=C_DARK, bg=C_SURFACE)
-            lbl_txt.pack(side="left", padx=5)
+            tk.Label(tile, text=icon, font=("Segoe UI", 20), fg=color, bg="#f8fafc").pack()
+            tk.Label(tile, text=text, font=("Segoe UI", 10, "bold"), fg=C_DARK, bg="#f8fafc").pack(pady=(5, 0))
+            tk.Label(tile, text=desc, font=("Segoe UI", 7), fg=C_MUTED, bg="#f8fafc").pack()
             
             def _make_nav(k=key): return lambda _: self._nav_to(k)
-            for w in (f, lbl_ico, lbl_txt):
+            for w in (tile,): # Bind to tile
                 w.bind("<Button-1>", _make_nav(key))
-                w.bind("<Enter>", lambda e, f=f: f.config(bg="#f1f5f9"))
-                w.bind("<Leave>", lambda e, f=f: f.config(bg=C_SURFACE))
+                w.bind("<Enter>", lambda e, t=tile, c=color: t.config(bg="#eff6ff", highlightthickness=1, highlightbackground=c))
+                w.bind("<Leave>", lambda e, t=tile: t.config(bg="#f8fafc", highlightthickness=0))
+            for child in tile.winfo_children():
+                child.bind("<Button-1>", _make_nav(key))
 
         # 2. System Health
         h_outer, h_card = make_card(side, padx=20, pady=18, shadow=True)

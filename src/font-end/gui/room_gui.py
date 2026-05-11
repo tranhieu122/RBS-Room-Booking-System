@@ -41,8 +41,8 @@ class RoomManagementFrame(tk.Frame):
         # Removed header for stability
         
         # ── Stat summary bar ─────────────────────────────────────────────────
-        stats_outer = tk.Frame(self, bg=C_BG, padx=20, pady=10)
-        stats_outer.pack(fill="x", pady=(0, 5))
+        stats_outer = tk.Frame(self, bg=C_BG)
+        stats_outer.pack(fill="x", padx=0, pady=(10, 5)) # Full width
         for i in range(4): stats_outer.columnconfigure(i, weight=1)
         
         from gui.theme import make_card
@@ -55,25 +55,35 @@ class RoomManagementFrame(tk.Frame):
         ]
         
         for i, (key, icon, label, bg, fg) in enumerate(stat_defs):
-            outer, chip = make_card(stats_outer, padx=15, pady=12, shadow=False)
-            outer.config(highlightthickness=1, highlightbackground="#e2e8f0")
-            outer.grid(row=0, column=i, sticky="nsew", padx=4)
-            chip.config(bg=bg)
+            outer, chip = make_card(stats_outer, padx=15, pady=15, shadow=True)
+            outer.grid(row=0, column=i, sticky="nsew", padx=10, pady=10)
             
-            top_f = tk.Frame(chip, bg=bg)
-            top_f.pack(fill="x")
-            tk.Label(top_f, text=icon, bg=bg, font=("Segoe UI", 16)).pack(side="left")
-            val_lbl = tk.Label(top_f, text="0", bg=bg, fg=fg, font=("Segoe UI", 18, "bold"))
-            val_lbl.pack(side="right")
+            # Left icon badge with glow
+            badge = tk.Frame(chip, bg="#f8fafc", padx=10, pady=8)
+            badge.pack(side="left", padx=(0, 15))
+            tk.Label(badge, text=icon, bg="#f8fafc", font=("Segoe UI", 20)).pack()
+            
+            txt_f = tk.Frame(chip, bg=C_SURFACE)
+            txt_f.pack(side="left", fill="both", expand=True)
+            
+            val_lbl = tk.Label(txt_f, text="0", bg=C_SURFACE, fg=fg, font=("Segoe UI", 20, "bold"))
+            val_lbl.pack(anchor="w")
             self._stat_labels[key] = val_lbl
             
-            tk.Label(chip, text=label.upper(), bg=bg, fg="#64748b",
-                     font=("Segoe UI", 8, "bold")).pack(anchor="e", pady=(4,0))
+            tk.Label(txt_f, text=label.upper(), bg=C_SURFACE, fg=C_MUTED,
+                     font=("Segoe UI", 8, "bold")).pack(anchor="w")
+
+            # Hover Interaction
+            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c, highlightthickness=2)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER, highlightthickness=1)
+            chip.bind("<Enter>", _on_enter)
+            chip.bind("<Leave>", _on_leave)
 
         toolbar = tk.Frame(self, bg=C_BG)
-        toolbar.pack(fill="x", padx=20, pady=(0, 15))
+        toolbar.pack(fill="x", padx=10, pady=(10, 15))
         search_box(toolbar, self.search_var, placeholder="Tìm kiếm phòng học...", 
-                   on_type=self.refresh, width=32).pack(side="left")
+                   on_type=self.refresh, width=40).pack(side="left", padx=10)
 
         is_admin = (self.current_user is not None
                     and getattr(self.current_user, "role", "") == "Admin")
@@ -93,21 +103,19 @@ class RoomManagementFrame(tk.Frame):
         btn(action_bar, "Báo lỗi", self._report_issue, variant="outline", icon="🚨").pack(side="left", padx=4)
         btn(action_bar, "Báo hỏng", self._report_equipment, variant="warning", icon="🔧").pack(side="left", padx=4)
 
-        wrap = tk.Frame(self, bg=C_SURFACE, highlightthickness=1,
-                        highlightbackground=C_BORDER, padx=14, pady=14)
-        wrap.pack(fill="both", expand=True, padx=20, pady=(0, 16))
+        wrap = tk.Frame(self, bg=C_SURFACE)
+        wrap.pack(fill="both", expand=True, padx=0, pady=(0, 0)) # Full width
 
         cols = ("ma", "ten", "suc_chua", "loai", "thiet_bi", "danh_gia", "trang_thai")
-        hdrs = ("Ma phong", "Ten phong", "Suc chua", "Loai phong",
-                "Trang thiet bi", "Danh gia", "Trang thai")
-        wids = (100, 160, 90, 140, 260, 90, 110)
+        hdrs = ("Mã phòng", "Tên phòng", "Sức chứa", "Loại phòng",
+                "Trang thiết bị", "Đánh giá", "Trạng thái")
+        wids = (100, 160, 90, 140, 300, 90, 110)
         self.tree = make_tree(wrap, cols, hdrs, wids)
         with_scrollbar(wrap, self.tree)
 
         # ── Panel gợi ý phòng còn trống ─────────────────────────────────────
-        # Outer shadow frame (giả lập shadow bằng viền màu primary)
-        suggest_outer = tk.Frame(self, bg=C_BORDER, padx=1, pady=1)
-        suggest_outer.pack(fill="x", padx=20, pady=(0, 20))
+        suggest_outer = tk.Frame(self, bg=C_BG)
+        suggest_outer.pack(fill="x", padx=0, pady=(10, 0)) # Full width
 
         suggest_wrap = tk.Frame(suggest_outer, bg=C_SURFACE)
         suggest_wrap.pack(fill="both", expand=True)
@@ -155,6 +163,7 @@ class RoomManagementFrame(tk.Frame):
             borderwidth=1, font=("Segoe UI", 11),
         )
         date_entry.pack(padx=4, pady=4)
+        date_entry.bind("<Button-1>", lambda _: date_entry.drop_down())
         date_entry.bind("<<DateEntrySelected>>",  # type: ignore[attr-defined]
             lambda *_: self.after(100, self._show_available))
 
