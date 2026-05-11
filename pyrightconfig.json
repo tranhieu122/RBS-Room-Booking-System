@@ -1,0 +1,18 @@
+{
+  "typeCheckingMode": "off",
+  "extraPaths": [
+    "src/back end",
+    "src/font-end"
+  ],
+  "exclude": [
+    "src/back end/logs/**",
+    "__pycache__/**",
+    ".venv/**",
+    "C:/Python314/**",
+    "C:/Python313/**",
+    "C:/Python312/**",
+    "C:/Python311/**",
+    "C:/Python310/**",
+    "C:/Python39/**", "**/node_modules", "**/__pycache__", "**/.*"
+  ]
+}

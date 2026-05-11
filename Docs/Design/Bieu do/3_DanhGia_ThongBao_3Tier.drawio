@@ -1,0 +1,109 @@
+<mxfile host="Electron" agent="Mozilla/5.0">
+  <diagram id="diagram_DanhGia_ThongBao" name="Đánh Giá &amp; Thông Báo">
+    <mxGraphModel dx="1705" dy="1075" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1350" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#E6E6FA;strokeColor=#B0C4DE;fontStyle=1;startSize=40;fontSize=14;" value="TẦNG 1: UI / VIEW" vertex="1">
+          <mxGeometry height="270" width="1500" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="2" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#DCDCDC;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UI_DanhGiaPhong&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ hien_thi()&lt;br&gt;+ gui_danh_gia(stars, comment)&lt;br&gt;+ xem_danh_gia_phong()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="120" width="290" x="60" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="2" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#DCDCDC;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UI_SuCoPhong&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ hien_thi()&lt;br&gt;+ bao_cao_su_co(description)&lt;br&gt;+ xem_su_co()&lt;br&gt;+ xu_ly_su_co(issue_id)&lt;/p&gt;" vertex="1">
+          <mxGeometry height="130" width="290" x="430" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="7" parent="2" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#DCDCDC;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UI_ThongBao&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ hien_thi()&lt;br&gt;+ xem_thong_bao()&lt;br&gt;+ gui_thong_bao(title, message)&lt;br&gt;+ danh_dau_da_doc()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="130" width="290" x="1050" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#F0FFF0;strokeColor=#8FBC8F;fontStyle=1;startSize=40;fontSize=14;" value="TẦNG 2: CONTROLLER" vertex="1">
+          <mxGeometry height="400" width="1500" x="40" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="8" parent="3" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#C1FFC1;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;RoomFeedbackController&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- rating_dao: RoomRatingDAO&lt;br&gt;- issue_dao: RoomIssueDAO&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ add_rating(room_id, user, stars, comment)&lt;br&gt;+ get_ratings(room_id)&lt;br&gt;+ get_user_rating(room_id, user_id)&lt;br&gt;+ average_stars(room_id)&lt;br&gt;+ report_issue(room_id, user, description)&lt;br&gt;+ get_issues(room_id)&lt;br&gt;+ resolve_issue(issue_id)&lt;/p&gt;" vertex="1">
+          <mxGeometry height="280" width="360" x="60" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="9" parent="3" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#C1FFC1;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;NotificationController&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- notif_dao: NotificationDAO&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ send_to_user(sender, recipient_id, title, message)&lt;br&gt;+ send_system(recipient_id, title, message)&lt;br&gt;+ send_to_role(sender, role, title, message, users)&lt;br&gt;+ send_to_all(sender, title, message, users)&lt;br&gt;+ get_notifications(user_id, unread_only)&lt;br&gt;+ count_unread(user_id)&lt;br&gt;+ mark_read(notif_id)&lt;br&gt;+ mark_all_read(user_id)&lt;br&gt;+ delete(notif_id)&lt;/p&gt;" vertex="1">
+          <mxGeometry height="310" width="360" x="1060" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#FFF8DC;strokeColor=#DEB887;fontStyle=1;startSize=40;fontSize=14;" value="TẦNG 3: MODEL / ENTITY" vertex="1">
+          <mxGeometry height="520" width="1500" x="40" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFE4B5;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;RoomRating&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- rating_id: int&lt;br&gt;- room_id: str&lt;br&gt;- user_id: str&lt;br&gt;- user_name: str&lt;br&gt;- stars: int  &lt;i&gt;(1..5)&lt;/i&gt;&lt;br&gt;- comment: str&lt;br&gt;- created_at: str&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ add()&lt;br&gt;+ average()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="240" width="290" x="55" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFE4B5;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;RoomIssue&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- issue_id: int&lt;br&gt;- room_id: str&lt;br&gt;- user_id: str&lt;br&gt;- user_name: str&lt;br&gt;- description: str&lt;br&gt;- status: str  &lt;i&gt;(Chua xu ly / Da xu ly)&lt;/i&gt;&lt;br&gt;- created_at: str&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ save()&lt;br&gt;+ update_status()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="250" width="290" x="530" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="12" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFE4B5;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;Notification&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- notif_id: int&lt;br&gt;- sender_id: str&lt;br&gt;- sender_name: str&lt;br&gt;- recipient_id: str&lt;br&gt;- title: str&lt;br&gt;- message: str&lt;br&gt;- is_read: bool&lt;br&gt;- created_at: str&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ send()&lt;br&gt;+ read()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="260" width="290" x="1060" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="13" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFFACD;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;Room&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- room_id: str&lt;br&gt;- name: str&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;" vertex="1">
+          <mxGeometry height="80" width="200" x="100" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="14" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFFACD;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;User&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- user_id: str&lt;br&gt;- username: str&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;" vertex="1">
+          <mxGeometry height="80" width="200" x="570" y="410" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-26" parent="4" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="30" width="60" x="160" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-27" parent="4" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="n" vertex="1">
+          <mxGeometry height="30" width="60" x="180" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-31" parent="4" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="30" width="60" x="620" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-35" parent="4" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="n" vertex="1">
+          <mxGeometry height="30" width="60" x="285" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-36" parent="4" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="30" width="60" x="480" y="230" as="geometry" />
+        </mxCell>
+        <mxCell id="15" edge="1" parent="1" source="5" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="8" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="16" edge="1" parent="1" source="6" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" target="8" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="17" edge="1" parent="1" source="7" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="9" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="18" edge="1" parent="1" source="8" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="10" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="19" edge="1" parent="1" source="8" style="endArrow=open;endFill=0;html=1;dashed=1;" target="11" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="20" edge="1" parent="1" source="9" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="12" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" edge="1" parent="1" source="13" style="endArrow=classic;html=1;" target="10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" edge="1" parent="1" source="13" style="endArrow=classic;html=1;" target="11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" edge="1" parent="1" source="14" style="endArrow=classic;html=1;" target="10" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" edge="1" parent="1" source="14" style="endArrow=classic;html=1;" target="11" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="25" edge="1" parent="1" source="14" style="endArrow=classic;html=1;" target="12" value="gui">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="26" edge="1" parent="1" source="14" style="endArrow=classic;html=1;dashed=1;" target="12" value="nhan">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-32" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="n" vertex="1">
+          <mxGeometry height="30" width="60" x="700" y="1200" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-33" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="n" vertex="1">
+          <mxGeometry height="30" width="60" x="560" y="1210" as="geometry" />
+        </mxCell>
+        <mxCell id="a0C7YGFS0fiAeWLjNfFq-34" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="30" width="60" x="370" y="1060" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

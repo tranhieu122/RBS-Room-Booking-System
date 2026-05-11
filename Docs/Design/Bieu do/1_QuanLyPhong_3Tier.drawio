@@ -1,0 +1,115 @@
+<mxfile host="Electron" agent="Mozilla/5.0">
+  <diagram id="diagram_QuanLyPhong" name="Quản Lý Phòng">
+    <mxGraphModel dx="2046" dy="1290" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1350" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#E6E6FA;strokeColor=#B0C4DE;fontStyle=1;startSize=40;fontSize=14;" value="TẦNG 1: UI / VIEW" vertex="1">
+          <mxGeometry height="270" width="1500" x="40" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="2" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#DCDCDC;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UI_DangNhap&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ hien_thi()&lt;br&gt;+ dang_nhap()&lt;br&gt;+ dang_xuat()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="120" width="280" x="60" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="2" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#DCDCDC;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UI_QuanLyNguoiDung&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ hien_thi()&lt;br&gt;+ them_moi()&lt;br&gt;+ chinh_sua()&lt;br&gt;+ xoa()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="130" width="280" x="390" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="7" parent="2" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#DCDCDC;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UI_QuanLyPhong&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ hien_thi()&lt;br&gt;+ them_phong()&lt;br&gt;+ chinh_sua_phong()&lt;br&gt;+ xoa_phong()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="130" width="280" x="720" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="8" parent="2" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#DCDCDC;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UI_QuanLyThietBi&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ hien_thi()&lt;br&gt;+ them_thiet_bi()&lt;br&gt;+ chinh_sua_thiet_bi()&lt;br&gt;+ bao_cao_su_co_thiet_bi()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="130" width="280" x="1060" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#F0FFF0;strokeColor=#8FBC8F;fontStyle=1;startSize=40;fontSize=14;" value="TẦNG 2: CONTROLLER" vertex="1">
+          <mxGeometry height="400" width="1500" x="40" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="9" parent="3" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#C1FFC1;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;AuthController&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- user_dao: UserDAO&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ authenticate(username, password)&lt;br&gt;+ register(payload)&lt;br&gt;+ change_password(user_id, old_pw, new_pw)&lt;br&gt;+ reset_password(user_id)&lt;/p&gt;" vertex="1">
+          <mxGeometry height="170" width="280" x="60" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="3" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#C1FFC1;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;UserController&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- user_dao: UserDAO&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ get_user(user_id)&lt;br&gt;+ list_users(keyword, role, status)&lt;br&gt;+ save_user(payload)&lt;br&gt;+ delete_user(user_id)&lt;br&gt;+ change_status(user_id, status)&lt;/p&gt;" vertex="1">
+          <mxGeometry height="190" width="280" x="390" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="3" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#C1FFC1;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;RoomController&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- room_dao: RoomDAO&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ list_rooms(keyword, room_type, status)&lt;br&gt;+ get_room(room_id)&lt;br&gt;+ save_room(payload)&lt;br&gt;+ delete_room(room_id)&lt;br&gt;+ list_room_types()&lt;br&gt;+ room_stats(booking_ctrl)&lt;/p&gt;" vertex="1">
+          <mxGeometry height="210" width="280" x="720" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="12" parent="3" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#C1FFC1;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;EquipmentController&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- equipment_dao: EquipmentDAO&lt;br&gt;- report_dao: EquipmentReportDAO&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ list_equipment(room_id, type, status)&lt;br&gt;+ get_equipment(equipment_id)&lt;br&gt;+ save_equipment(payload)&lt;br&gt;+ delete_equipment(equipment_id)&lt;br&gt;+ report_issue(equip_id, user, desc)&lt;br&gt;+ resolve_report(report_id)&lt;br&gt;+ count_by_status()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="250" width="280" x="1060" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="swimlane;horizontal=0;whiteSpace=wrap;html=1;fillColor=#FFF8DC;strokeColor=#DEB887;fontStyle=1;startSize=40;fontSize=14;" value="TẦNG 3: MODEL / ENTITY" vertex="1">
+          <mxGeometry height="470" width="1510" x="50" y="820" as="geometry" />
+        </mxCell>
+        <mxCell id="13" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFE4B5;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;User&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- user_id: str&lt;br&gt;- username: str&lt;br&gt;- full_name: str&lt;br&gt;- role: str  &lt;i&gt;(Admin / Giang vien / Sinh vien)&lt;/i&gt;&lt;br&gt;- email: str&lt;br&gt;- phone: str&lt;br&gt;- password_hash: str&lt;br&gt;- status: str  &lt;i&gt;(Hoat dong / Khoa)&lt;/i&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ save()&lt;br&gt;+ delete()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="260" width="290" x="40" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="14" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFE4B5;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;Room&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- room_id: str&lt;br&gt;- name: str&lt;br&gt;- capacity: int&lt;br&gt;- room_type: str&lt;br&gt;- equipment: str  &lt;i&gt;(mo ta)&lt;/i&gt;&lt;br&gt;- status: str  &lt;i&gt;(Hoat dong / Bao tri)&lt;/i&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ save()&lt;br&gt;+ delete()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="220" width="290" x="420" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="15" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFE4B5;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;Equipment&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- equipment_id: str&lt;br&gt;- name: str&lt;br&gt;- equipment_type: str&lt;br&gt;- room_id: str&lt;br&gt;- status: str  &lt;i&gt;(Hoat dong / Hong / Bao tri)&lt;/i&gt;&lt;br&gt;- purchase_date: str&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ save()&lt;br&gt;+ delete()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="200" width="290" x="790" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="16" parent="4" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;whiteSpace=wrap;fillColor=#FFE4B5;" value="&lt;p style=&#39;margin:0px;margin-top:4px;text-align:center;&#39;&gt;&lt;b&gt;EquipmentReport&lt;/b&gt;&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;- report_id: int&lt;br&gt;- equipment_id: str&lt;br&gt;- equipment_name: str&lt;br&gt;- room_id: str&lt;br&gt;- user_id: str&lt;br&gt;- user_name: str&lt;br&gt;- description: str&lt;br&gt;- status: str  &lt;i&gt;(Cho xu ly / Da xu ly)&lt;/i&gt;&lt;br&gt;- created_at: str&lt;/p&gt;&lt;hr size=&#39;1&#39;/&gt;&lt;p style=&#39;margin:0px;margin-left:4px;&#39;&gt;+ save()&lt;br&gt;+ update_status()&lt;/p&gt;" vertex="1">
+          <mxGeometry height="270" width="290" x="1220" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="29" edge="1" parent="4" source="13" style="endArrow=classic;html=1;exitX=1;exitY=0.75;exitDx=0;exitDy=0;entryX=-0.013;entryY=0.963;entryDx=0;entryDy=0;entryPerimeter=0;" target="16" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="280" y="410" as="sourcePoint" />
+            <mxPoint x="1145" y="410" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="dHtQ_4yMeFpc2kihdTSr-35" parent="4" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="n" vertex="1">
+          <mxGeometry height="30" width="60" x="1170" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="dHtQ_4yMeFpc2kihdTSr-36" parent="4" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="30" width="60" x="690" y="155" as="geometry" />
+        </mxCell>
+        <mxCell id="17" edge="1" parent="1" source="5" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="9" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="18" edge="1" parent="1" source="6" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="10" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="19" edge="1" parent="1" source="7" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="11" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="20" edge="1" parent="1" source="8" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="12" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="21" edge="1" parent="1" source="5" style="endArrow=open;endFill=0;html=1;dashed=1;" target="10" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="22" edge="1" parent="1" source="9" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="13" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="23" edge="1" parent="1" source="10" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.644;entryY=-0.012;entryDx=0;entryDy=0;entryPerimeter=0;" target="13" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="24" edge="1" parent="1" source="11" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="14" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="25" edge="1" parent="1" source="12" style="endArrow=open;endFill=0;html=1;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="15" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="26" edge="1" parent="1" source="12" style="endArrow=open;endFill=0;html=1;dashed=1;" target="16" value="uses">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="27" edge="1" parent="1" source="14" style="endArrow=classic;html=1;startArrow=diamondThin;startFill=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="15" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="28" edge="1" parent="1" source="15" style="endArrow=classic;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="16" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="dHtQ_4yMeFpc2kihdTSr-31" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="30" width="60" x="360" y="1120" as="geometry" />
+        </mxCell>
+        <mxCell id="dHtQ_4yMeFpc2kihdTSr-32" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="n" vertex="1">
+          <mxGeometry height="30" width="60" x="1230" y="1110" as="geometry" />
+        </mxCell>
+        <mxCell id="dHtQ_4yMeFpc2kihdTSr-33" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="1" vertex="1">
+          <mxGeometry height="30" width="60" x="1110" y="960" as="geometry" />
+        </mxCell>
+        <mxCell id="dHtQ_4yMeFpc2kihdTSr-37" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="n" vertex="1">
+          <mxGeometry height="30" width="60" x="790" y="960" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

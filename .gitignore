@@ -1,0 +1,27 @@
+.venv/
+.vscode/
+__pycache__/
+*.pyc
+.github/skills/
+
+# Bien moi truong – KHONG BAO GIO commit len Git
+.env
+
+# Database sinh ra khi chay – khong can track
+src/back end/database/classroom_booking.db
+src/back end/database/backups/
+
+# Bao cao xuat ra
+exports/
+*.pdf
+*.xlsx
+
+# Backup files
+*.bkp
+
+# Logs
+src/back end/logs/
+*.log
+
+# GitHub Workflows
+.github/

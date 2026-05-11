@@ -1,0 +1,38 @@
+﻿        outer, card = make_card(body, padx=20, pady=16)
+        outer.pack(fill="x", padx=20, pady=(0, 15))
+        
+        hdr = tk.Frame(card, bg=C_SURFACE)
+        hdr.pack(fill="x", pady=(0, 15))
+        tk.Label(hdr, text="â¡  Truy cáº­p nhanh",
+                 bg=C_SURFACE, fg=C_DARK, font=("Segoe UI", 11, "bold")).pack(side="left")
+
+        def _nav(key: str) -> None:
+            w = self.master
+            while w:
+                if hasattr(w, "_navigate"): w._navigate(key); return
+                w = getattr(w, "master", None)
+
+        def _refresh_all() -> None:
+            toast(self, "ÄĂ£ cáº­p nháº­t dá»¯ liá»‡u má»›i nháº¥t!", kind="success")
+            self._canvas.yview_moveto(0)
+            self._draw_content()
+
+        btn(hdr, "LĂ m má»›i", _refresh_all, variant="ghost", icon="đŸ”„").pack(side="right")
+
+        actions_row = tk.Frame(card, bg=C_SURFACE)
+        actions_row.pack(fill="x")
+
+        ACTIONS = [
+            ("Äáº·t phĂ²ng há»c", "primary", "booking_form", "Äáº·t phĂ²ng há»c má»›i", "đŸ“"),
+            ("Lá»‹ch Ä‘áº·t",     "outline", "booking_list", "Danh sĂ¡ch lá»‹ch Ä‘áº·t", "đŸ“‹"),
+            ("Lá»‹ch biá»ƒu",    "outline",  "schedule",     "Xem lá»‹ch tuáº§n", "đŸ“†"),
+            ("BĂ¡o cĂ¡o sá»‘",   "outline",  "report",       "Thá»‘ng kĂª chi tiáº¿t", "đŸ“"),
+            ("CÆ¡ sá»Ÿ váº­t cháº¥t", "outline", "rooms",       "Quáº£n lĂ½ phĂ²ng há»c", "đŸ«"),
+            ("NgÆ°á»i dĂ¹ng",   "outline",  "users",        "Quáº£n lĂ½ tĂ i khoáº£n", "đŸ‘¥"),
+        ]
+
+        for label, variant, key, tip, ic in ACTIONS:
+            b = btn(actions_row, label, lambda k=key: _nav(k), variant=variant, icon=ic)
+            b.pack(side="left", padx=(0, 12))
+            tooltip(b, tip)
+
