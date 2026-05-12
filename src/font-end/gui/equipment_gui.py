@@ -198,9 +198,9 @@ class EquipmentManagementFrame(tk.Frame):
                      font=("Segoe UI", 7, "bold")).pack(anchor="w")
 
             # Hover Interaction
-            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
-            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c, highlightthickness=2)
-            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER, highlightthickness=1)
+            outer.config(highlightthickness=2, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER)
             chip.bind("<Enter>", _on_enter)
             chip.bind("<Leave>", _on_leave)
 

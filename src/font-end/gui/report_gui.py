@@ -82,8 +82,6 @@ class ReportFrame(tk.Frame):
                            state="readonly",
                            borderwidth=0, font=("Segoe UI", 10))
             e.pack(padx=6, pady=4)
-            # Ensure clicking the entry also opens the calendar
-            e.bind("<Button-1>", lambda _: e.drop_down())
             return e
 
         tk.Label(filter_panel, text="Tu:", bg="#eef2ff", fg="#4f46e5",
@@ -275,9 +273,9 @@ class ReportFrame(tk.Frame):
                      font=("Segoe UI", 9, "bold")).pack(anchor="w")
 
             # Hover Interaction
-            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
-            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c, highlightthickness=2)
-            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER, highlightthickness=1)
+            outer.config(highlightthickness=2, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER)
             chip.bind("<Enter>", _on_enter)
             chip.bind("<Leave>", _on_leave)
         for col in range(3):

@@ -542,12 +542,12 @@ class RoomRatingManagementFrame(tk.Frame):
         rid, unm, sts, cmt, cat = d
         outer = tk.Frame(self.list_frame, bg=C_BG, pady=10); outer.pack(fill="x")
         
-        card = tk.Frame(outer, bg=C_SURFACE, padx=25, pady=25, highlightthickness=1, highlightbackground=C_BORDER)
+        card = tk.Frame(outer, bg=C_SURFACE, padx=25, pady=25, highlightthickness=2, highlightbackground=C_BORDER)
         card.pack(fill="x")
         
         # Hover
-        def _on_ent(e): card.configure(highlightbackground=C_PRIMARY, highlightthickness=1.5)
-        def _on_lv(e): card.configure(highlightbackground=C_BORDER, highlightthickness=1)
+        def _on_ent(e): card.configure(highlightbackground=C_PRIMARY)
+        def _on_lv(e): card.configure(highlightbackground=C_BORDER)
         card.bind("<Enter>", _on_ent); card.bind("<Leave>", _on_lv)
         
         # Sentiment Side Indicator

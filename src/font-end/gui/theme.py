@@ -148,9 +148,9 @@ def search_box(parent: tk.Misc, var: tk.StringVar, width: int = 22,
         e.bind("<FocusOut>", _restore, add="+")
 
     def _in(_: Any) -> None:
-        outer.config(highlightbackground=C_PRIMARY, highlightthickness=2)
+        outer.config(highlightbackground=C_PRIMARY)
     def _out(_: Any) -> None:
-        outer.config(highlightbackground=C_BORDER, highlightthickness=1)
+        outer.config(highlightbackground=C_BORDER)
     e.bind("<FocusIn>",  _in, add="+")
     e.bind("<FocusOut>", _out, add="+")
 

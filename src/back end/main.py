@@ -56,16 +56,16 @@ from gui.recurring_schedule_gui import RecurringScheduleFrame
 from gui.user_gui import UserManagementFrame
 
 # ── Layout ───────────────────────────────────────────────────────────────────
-SIDEBAR_W = 240
-SIDEBAR_W_COLLAPSED = 64
-TOPBAR_H  = 68
+SIDEBAR_W = 260
+SIDEBAR_W_COLLAPSED = 72
+TOPBAR_H  = 72
 
-# ── Sidebar palette — Clean Titanium White ────────────────────────────
-SB_BG     = "#ffffff"
-SB_HOVER  = "#f1f5f9"
-SB_ACTIVE = "#eef2ff"
-SB_ACCENT = "#4f46e5"
-SB_TEXT   = "#64748b"
+# ── Sidebar palette — Premium Snow White ───────────────────────────────────
+SB_BG     = "#ffffff"    # Pure White
+SB_HOVER  = "#f1f5f9"    # Slate 100
+SB_ACTIVE = "#eff6ff"    # Blue 50
+SB_ACCENT = "#4f46e5"    # Indigo 600
+SB_TEXT   = "#475569"    # Slate 600
 SB_TEXT_ACTIVE = "#4f46e5"
 SB_MUTED  = "#94a3b8"
 SB_SECT   = "#f8fafc"
@@ -143,13 +143,6 @@ def _initials(name: str) -> str:
 
 
 # ── App root ──────────────────────────────────────────────────────────────────
-
-def _initials(name: str) -> str:
-    parts = name.strip().split()
-    if len(parts) >= 2:
-        return (parts[0][0] + parts[-1][0]).upper()
-    return name[:2].upper() if name else "??"
-
 
 class App(tk.Tk):
     def __init__(self) -> None:
@@ -250,134 +243,101 @@ class MainShell(tk.Frame):
 
     # ── TopBar ─────────────────────────────────────────────────────────────────
     def _build_topbar(self) -> None:
-        # ── Luxury Titanium TopBar ──────────────────────────────────────────
+        # ── Premium Glass TopBar ──────────────────────────────────────────
         tb_wrap = tk.Frame(self, bg=C_BG)
         tb_wrap.pack(fill="x", pady=(0, 2), padx=0)
         
-        tb = tk.Frame(tb_wrap, bg=TP_BG, height=TOPBAR_H + 5) # Slightly taller for luxury
+        tb = tk.Frame(tb_wrap, bg=TP_BG, height=TOPBAR_H)
         tb.pack(fill="x")
         tb.pack_propagate(False)
-        tb.config(highlightthickness=1, highlightbackground="#e2e8f0")
+        tb.config(highlightthickness=1, highlightbackground=TP_BORDER)
 
-        # ── Left Section: Identity ──────────────────────────────────────────
+        # ── Left: Brand & Toggle ──────────────────────────────────────────
         left = tk.Frame(tb, bg=TP_BG)
         left.pack(side="left", fill="y", padx=(20, 0))
 
-        # Hamburger Menu
         self._sb_toggle_btn = tk.Button(
             left, text="☰", bg=TP_BG, fg=C_PRIMARY,
             font=("Segoe UI", 16, "bold"), relief="flat", bd=0, cursor="hand2",
-            activebackground="#f1f5f9", activeforeground=C_PRIMARY,
+            activebackground=SB_HOVER, activeforeground=C_PRIMARY,
             command=self._toggle_sidebar)
         self._sb_toggle_btn.pack(side="left", padx=(0, 15))
         
-        # System Logo/Title
         logo_f = tk.Frame(left, bg=TP_BG)
         logo_f.pack(side="left")
-        tk.Label(logo_f, text="SMART", bg=TP_BG, fg=C_PRIMARY, 
-                 font=("Segoe UI", 11, "bold")).pack(side="left")
-        tk.Label(logo_f, text="CAMPUS", bg=TP_BG, fg=C_DARK, 
-                 font=("Segoe UI", 11, "bold")).pack(side="left", padx=(4, 0))
+        tk.Label(logo_f, text="SMART", bg=TP_BG, fg=C_PRIMARY, font=("Segoe UI", 11, "bold")).pack(side="left")
+        tk.Label(logo_f, text="CAMPUS", bg=TP_BG, fg=C_DARK, font=("Segoe UI", 11, "bold")).pack(side="left", padx=(4, 0))
 
-        # ── Center Section: Global Command Bar ───────────────────────────────
+        # ── Center: Search ────────────────────────────────────────────────
         center = tk.Frame(tb, bg=TP_BG)
         center.pack(side="left", fill="both", expand=True, padx=40)
         
-        # Floating Search Design
         s_wrap = tk.Frame(center, bg=TP_BG)
         s_wrap.pack(expand=True)
-        
-        search_f = tk.Frame(s_wrap, bg="#f8fafc", padx=15, pady=6,
-                            highlightthickness=1, highlightbackground="#e2e8f0")
+        search_f = tk.Frame(s_wrap, bg="#f1f5f9", padx=18, pady=8, highlightthickness=1, highlightbackground="#e2e8f0")
         search_f.pack(pady=10)
+        tk.Label(search_f, text="🔍", bg="#f1f5f9", fg="#64748b", font=("Segoe UI", 11)).pack(side="left")
+        self.search_ent = tk.Entry(search_f, bg="#f1f5f9", fg=C_DARK, font=("Segoe UI", 10), relief="flat", bd=0, width=48)
+        self.search_ent.pack(side="left", padx=12)
+        self.search_ent.insert(0, "Tìm nhanh...")
         
-        tk.Label(search_f, text="🔍", bg="#f8fafc", fg="#94a3b8", font=("Segoe UI", 10)).pack(side="left")
-        
-        self.search_ent = tk.Entry(search_f, bg="#f8fafc", fg=C_DARK,
-                                   font=("Segoe UI", 10), relief="flat", bd=0, width=45)
-        self.search_ent.pack(side="left", padx=10)
-        self.search_ent.insert(0, "Tìm kiếm tài nguyên, phòng học...")
-        
-        # Shortcut hint
-        tk.Label(search_f, text="Ctrl+K", bg="#f1f5f9", fg="#94a3b8", 
-                 font=("Segoe UI", 7, "bold"), padx=5, pady=2).pack(side="left")
-
         def _on_focus(e, active):
-            clr = "white" if active else "#f8fafc"
-            b_clr = C_PRIMARY if active else "#e2e8f0"
-            search_f.config(bg=clr, highlightbackground=b_clr)
+            clr = "white" if active else "#f1f5f9"
+            search_f.config(bg=clr, highlightbackground=C_PRIMARY if active else "#e2e8f0")
             self.search_ent.config(bg=clr)
-            if active and self.search_ent.get().startswith("Tìm kiếm"): self.search_ent.delete(0, "end")
-            if not active and not self.search_ent.get(): self.search_ent.insert(0, "Tìm kiếm tài nguyên, phòng học...")
-            for w in search_f.winfo_children(): 
-                if w != self.search_ent and "Label" in str(w): w.config(bg=clr)
-
+            if active and self.search_ent.get() == "Tìm nhanh...": self.search_ent.delete(0, "end")
+            if not active and not self.search_ent.get(): self.search_ent.insert(0, "Tìm nhanh...")
         self.search_ent.bind("<FocusIn>", lambda e: _on_focus(e, True))
         self.search_ent.bind("<FocusOut>", lambda e: _on_focus(e, False))
 
-        # ── Right Section: User & Status ────────────────────────────────────
+        # ── Right: User ──────────────────────────────────────────────────
         right = tk.Frame(tb, bg=TP_BG)
         right.pack(side="right", fill="y", padx=20)
-
-        # 1. System Clock
+        
+        # Clock
         clock_f = tk.Frame(right, bg=TP_BG, padx=15)
         clock_f.pack(side="left")
-        self._time_lbl = tk.Label(clock_f, text="00:00:00", bg=TP_BG, fg=C_DARK, 
-                                  font=("Segoe UI Semibold", 10), anchor="e")
+        self._time_lbl = tk.Label(clock_f, text="--:--:--", bg=TP_BG, fg=C_DARK, font=("Segoe UI Semibold", 10), anchor="e")
         self._time_lbl.pack(fill="x")
-        self._date_lbl = tk.Label(clock_f, text="JAN 01, 2026", bg=TP_BG, fg=C_MUTED, 
-                                  font=("Segoe UI", 7, "bold"), anchor="e")
+        self._date_lbl = tk.Label(clock_f, text="--- --, ----", bg=TP_BG, fg=C_MUTED, font=("Segoe UI", 7, "bold"), anchor="e")
         self._date_lbl.pack(fill="x")
         self._update_clock()
 
-        # 2. Notifications
+        # Badges
         notif_f = tk.Frame(right, bg=TP_BG)
         notif_f.pack(side="left", padx=10)
-        
-        # Messages
         self._notif_badge_host = tk.Label(notif_f, text="📩", bg=TP_BG, font=("Segoe UI", 13), cursor="hand2")
         self._notif_badge_host.pack(side="left", padx=5)
         self._notif_badge_host.bind("<Button-1>", lambda *_: self._navigate("notifications"))
         
-        # Alerts (Admin only)
-        if self.app.current_user.role == "Admin": # type: ignore
+        if self.app.current_user.role == "Admin":
             self._badge_host = tk.Label(notif_f, text="🔔", bg=TP_BG, font=("Segoe UI", 13), cursor="hand2")
             self._badge_host.pack(side="left", padx=5)
             self._badge_host.bind("<Button-1>", lambda *_: self._navigate("booking_list"))
         
         self._refresh_notif_badge()
-        if self.app.current_user.role == "Admin": self._refresh_pending_badge() # type: ignore
+        if self.app.current_user.role == "Admin": self._refresh_pending_badge()
 
-        # 3. User Avatar & Identity (Luxury Circle)
-        u = self.app.current_user # type: ignore
+        # User Profile
+        u = self.app.current_user
         u_f = tk.Frame(right, bg=TP_BG, cursor="hand2")
         u_f.pack(side="left", padx=(10, 0))
-        
-        # User Info (Name first)
         u_info = tk.Frame(u_f, bg=TP_BG)
         u_info.pack(side="left", padx=(0, 12))
         tk.Label(u_info, text=u.full_name, bg=TP_BG, fg=C_DARK, font=("Segoe UI Semibold", 9), anchor="e").pack(anchor="e")
         tk.Label(u_info, text=u.role.upper(), bg=TP_BG, fg=C_PRIMARY, font=("Segoe UI", 7, "bold"), anchor="e").pack(anchor="e")
 
-        # Circular Avatar (on the right)
         av_c = tk.Canvas(u_f, bg=TP_BG, width=42, height=42, highlightthickness=0)
         av_c.pack(side="left")
-        
-        # Draw Circle
         av_clr = ROLE_AVATAR.get(u.role, "#64748b")
         av_c.create_oval(2, 2, 40, 40, fill=av_clr, outline="")
         av_c.create_text(21, 21, text=_initials(u.full_name), fill="white", font=("Segoe UI", 11, "bold"))
-        
-        # Online Status Pulse Dot
         av_c.create_oval(30, 30, 40, 40, fill="#10b981", outline="white", width=2)
         
-        # ── Bindings for Menu ──────────────────────────────────────────────
         def _bind_recursive(w):
             w.bind("<Button-1>", lambda e: self._show_user_menu(e))
             for child in w.winfo_children(): _bind_recursive(child)
-        
-        _bind_recursive(u_f) # This covers u_info, av_c, and all labels
-        # SaaS Bottom Border (Subtle)
+        _bind_recursive(u_f)
         tk.Frame(tb, bg="#f1f5f9", height=1).pack(fill="x", side="bottom")
 
 
@@ -535,10 +495,10 @@ class MainShell(tk.Frame):
         self._sb_frame = sb  # save reference for collapse/expand
 
         # ── Premium Logo Header ──────────────────────────────────────────
-        logo_container = tk.Frame(sb, bg=SB_BG, pady=4)
+        logo_container = tk.Frame(sb, bg=SB_BG, pady=15)
         logo_container.pack(fill="x")
         
-        self._logo_canvas = tk.Canvas(logo_container, width=SIDEBAR_W, height=60,
+        self._logo_canvas = tk.Canvas(logo_container, width=SIDEBAR_W, height=70,
                                      bg=SB_BG, highlightthickness=0)
         self._logo_canvas.pack(fill="x")
 
@@ -547,20 +507,20 @@ class MainShell(tk.Frame):
             cv.delete("all")
             w = cv.winfo_width() or SIDEBAR_W
             
-            # Icon Badge (Glow effect)
-            cv.create_oval(15, 10, 50, 45, fill="#eef2ff", outline="#e0e7ff", width=1)
-            cv.create_text(32, 28, text="[S]", font=("Segoe UI", 12, "bold"), fill="#4f46e5")
+            # Elite Logo (Polygon style)
+            cv.create_polygon([15,15, 45,10, 50,40, 20,45], fill=SB_ACCENT, outline="", tags="logo")
+            cv.create_text(32, 28, text="S", font=("Segoe UI", 16, "bold"), fill="white")
             
             if not self._sb_collapsed:
-                cv.create_text(65, 20, text="SMART CAMPUS", 
-                              font=("Segoe UI", 11, "bold"), fill="#1e293b", anchor="w", tags="txt")
-                cv.create_text(65, 38, text="Hệ thống quản lý thông minh", 
-                              font=("Segoe UI", 8), fill="#94a3b8", anchor="w", tags="txt")
+                cv.create_text(65, 22, text="TITANIUM RBS", 
+                              font=("Segoe UI", 13, "bold"), fill="#1e293b", anchor="w", tags="txt")
+                cv.create_text(65, 42, text="Quản trị viên Hệ thống", 
+                              font=("Segoe UI", 8), fill="#64748b", anchor="w", tags="txt")
 
         self._logo_canvas.bind("<Configure>", _draw_logo)
 
-        # Divider
-        tk.Frame(sb, bg="#e2e8f0", height=1).pack(fill="x", padx=20, pady=(0, 8))
+        # Divider - Subtle
+        tk.Frame(sb, bg="#e2e8f0", height=1).pack(fill="x", padx=25, pady=(5, 15))
 
         # Scrollable area for nav items
         cv = tk.Canvas(sb, bg=SB_BG, highlightthickness=0)
@@ -797,7 +757,8 @@ class MainShell(tk.Frame):
                                           user_controller=app.user_ctrl)
             elif key in ("schedule", "lich_bieu"):
                 frame = ScheduleFrame(self._content_frame,
-                                      app.booking_ctrl, app.room_ctrl)
+                                      app.booking_ctrl, app.room_ctrl, app.current_user)
+
             elif key == "recurring_schedule":
                 frame = RecurringScheduleFrame(
                     self._content_frame,

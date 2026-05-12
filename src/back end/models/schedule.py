@@ -9,3 +9,5 @@ class Schedule:
     slot: str
     label: str
     status: str
+    user_id: str = ""
+

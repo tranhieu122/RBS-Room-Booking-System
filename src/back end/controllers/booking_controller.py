@@ -169,14 +169,34 @@ class BookingController:
             raise ValueError("Khong tim thay yeu cau dat phong.")
         old_status = booking.status
         
-        # LOGIC FIX: Re-check conflicts when approving, in case another booking was approved in the meantime
+        # LOGIC FIX: Re-check conflicts when approving, in case another booking/rule was approved/activated
         if new_status == "Da duyet" and old_status != "Da duyet":
-            used = {b.slot for b in self.booking_dao.search(
+            # 1. Check against other Da duyet bookings
+            used_slots = {b.slot for b in self.booking_dao.search(
                         room_id=booking.room_id, 
                         date_from=booking.booking_date, 
                         date_to=booking.booking_date)
                     if b.status == "Da duyet" and b.booking_id != booking_id}
-            if booking.slot in used:
+            
+            # 2. Check against active recurring schedule occurrences
+            try:
+                from dao.schedule_rule_dao import ScheduleRuleDAO
+                occ_dao = ScheduleRuleDAO()
+                occs = occ_dao.list_occurrences_by_date_range(booking.booking_date, booking.booking_date)
+                _SLOT_START_MAP = {
+                    "07:00": "Ca 1", "09:35": "Ca 2",
+                    "13:00": "Ca 3", "15:35": "Ca 4",
+                    "18:15": "Ca 5",
+                }
+                for o in occs:
+                    if o["room_id"] == booking.room_id and o["status"] != "Huy":
+                        slot = _SLOT_START_MAP.get(o["start_time"])
+                        if slot:
+                            used_slots.add(slot)
+            except Exception:
+                pass
+
+            if booking.slot in used_slots:
                 raise ValueError(f"Khong the duyet: Phong '{booking.room_id}' da co lich chinh thuc trong ca nay.")
 
         booking.status = new_status
@@ -342,7 +362,8 @@ class BookingController:
             rows.append(Schedule(room_id=b.room_id, weekday=weekday,
                                  slot=b.slot,
                                  label=f"{b.room_id} – {b.user_name}",
-                                 status=b.status))
+                                 status=b.status,
+                                 user_id=b.user_id))
 
         # ── Recurring schedule occurrences ───────────────────────────────────
         _SLOT_TIME_MAP = {
@@ -385,6 +406,7 @@ class BookingController:
                     slot=slot,
                     label=f"[CK] {occ['subject']}{name_part}",
                     status=final_status,
+                    user_id=occ.get("lecturer_id", "")
                 ))
         except Exception:
             pass  # never crash the calendar if occurrence query fails

@@ -74,9 +74,9 @@ class RoomManagementFrame(tk.Frame):
                      font=("Segoe UI", 8, "bold")).pack(anchor="w")
 
             # Hover Interaction
-            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
-            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c, highlightthickness=2)
-            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER, highlightthickness=1)
+            outer.config(highlightthickness=2, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=fg): o.config(highlightbackground=c)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER)
             chip.bind("<Enter>", _on_enter)
             chip.bind("<Leave>", _on_leave)
 
@@ -163,7 +163,6 @@ class RoomManagementFrame(tk.Frame):
             borderwidth=1, font=("Segoe UI", 11),
         )
         date_entry.pack(padx=4, pady=4)
-        date_entry.bind("<Button-1>", lambda _: date_entry.drop_down())
         date_entry.bind("<<DateEntrySelected>>",  # type: ignore[attr-defined]
             lambda *_: self.after(100, self._show_available))
 

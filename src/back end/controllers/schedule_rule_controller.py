@@ -119,6 +119,7 @@ class ScheduleRuleController:
         )
         
         # ── CONFLICT CHECK ────────────────────────────────────────────────────
+        occurrences = self._generate_occurrences(rule)
         self._check_conflicts(rule, occurrences)
         # ── END CONFLICT CHECK ────────────────────────────────────────────────
         

@@ -123,7 +123,7 @@ class ScheduleRuleDAO:
         conn = get_connection()
         rows = conn.execute(
             """
-            SELECT o.*, r.status as rule_status
+            SELECT o.*, r.status as rule_status, r.lecturer_id
             FROM schedule_occurrences o
             JOIN schedule_rules r ON o.rule_id = r.id
             WHERE o.occurrence_date >= ? AND o.occurrence_date <= ?

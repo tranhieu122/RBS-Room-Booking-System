@@ -3,7 +3,7 @@ from __future__ import annotations
 import datetime as dt
 import tkinter as tk
 from tkinter import ttk
-from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_DARK, C_TEXT, C_PRIMARY, C_PRIMARY_H,
+from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_DARK, C_TEXT, C_PRIMARY, C_PRIMARY_H, C_MUTED,
                        F_TITLE, F_SECTION, F_BODY_B, page_header, btn, make_card)
 
 # Fallback constants if not imported
@@ -77,14 +77,18 @@ def _cell_tooltip(cell: tk.Widget, entries: "list[tuple[str, str]]",
             "Tu choi":   ("#fdf2f8", "#db2777"),
             "Lich day":  ("#e0f2fe", "#0369a1"),
         }
-        for label, status in entries[:5]:
+        for label, status, is_mine in entries[:5]:
             chip_bg, chip_fg = STATUS_CHIP.get(status, ("#f1f5f9", "#475569"))
+            if is_mine: chip_bg, chip_fg = ("#4f46e5", "white")
+            
             row_f = tk.Frame(frame, bg="#272165")
             row_f.pack(fill="x", pady=1)
-            tk.Label(row_f, text=f"  {label[:28]}",
+            
+            prefix = "⭐ " if is_mine else "  "
+            tk.Label(row_f, text=f"{prefix}{label[:28]}",
                      bg="#272165", fg="#e0e7ff",
-                     font=("Segoe UI", 9)).pack(side="left")
-            tk.Label(row_f, text=f"  {status}  ",
+                     font=("Segoe UI", 9, "bold" if is_mine else "normal")).pack(side="left")
+            tk.Label(row_f, text=f"  {'CỦA TÔI' if is_mine else status}  ",
                      bg=chip_bg, fg=chip_fg,
                      font=("Segoe UI", 7, "bold")).pack(side="right", padx=4)
 
@@ -122,12 +126,15 @@ VN_MONTHS = ["", "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5",
 
 
 class ScheduleFrame(tk.Frame):
-    def __init__(self, master, booking_controller, room_controller): # type: ignore
+    def __init__(self, master, booking_controller, room_controller, current_user=None): # type: ignore
         super().__init__(master, bg=C_BG) # type: ignore
         self.booking_ctrl  = booking_controller
         self.room_ctrl     = room_controller
+        self.current_user  = current_user
         self._week_offset  = 0
         self._week_lbl_var = tk.StringVar()
+        self._v_search     = tk.StringVar()
+        self._compact_mode = tk.BooleanVar(value=False)
         self._build()
 
     def _build(self):
@@ -159,7 +166,18 @@ class ScheduleFrame(tk.Frame):
         # Right: Filters
         filter_f = tk.Frame(toolbar, bg=C_SURFACE)
         filter_f.pack(side="right")
+
+        # 🔍 Search Bar
+        from gui.theme import search_box
+        s_box = search_box(filter_f, self._v_search, placeholder="Tìm môn, giảng viên...", 
+                           width=18, on_type=self._refresh)
+        s_box.pack(side="left", padx=(0, 12))
         
+        # 📏 Compact Toggle
+        ct = ttk.Checkbutton(filter_f, text="Gọn", variable=self._compact_mode, 
+                             command=self._refresh)
+        ct.pack(side="left", padx=(0, 10))
+
         tk.Label(filter_f, text="Phòng:", bg=C_SURFACE, fg=C_TEXT, font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 5))
         self._v_room = tk.StringVar(value="Tất cả phòng")
         rooms = ["Tất cả phòng"] + [r.room_id for r in self.room_ctrl.list_rooms()]
@@ -170,42 +188,25 @@ class ScheduleFrame(tk.Frame):
         
         btn(filter_f, "", self._refresh, variant="ghost", icon="🔄").pack(side="left")
 
-        # Left: Navigation
-        nav_f = tk.Frame(toolbar, bg=C_SURFACE, padx=10, pady=6)
-        nav_f.pack(side="left")
-        
-        def _nav_btn(parent, text, cmd): # type: ignore
-            b = tk.Button(parent, text=text, bg="#f1f5f9", fg="#1e293b",
-                          font=("Segoe UI", 8, "bold"), relief="flat",
-                          cursor="hand2", padx=10, pady=4, bd=0,
-                          activebackground="#e2e8f0", command=cmd)
-            b.bind("<Enter>", lambda *_: b.config(bg="#e2e8f0"))
-            b.bind("<Leave>", lambda *_: b.config(bg="#f1f5f9"))
-            return b
-            
-        _nav_btn(nav_f, "«", self._prev_week).pack(side="left", padx=(0, 5))
-        
-        tk.Label(nav_f, textvariable=self._week_lbl_var, bg=C_SURFACE,
-                 fg="#1e1b4b", font=("Segoe UI", 10, "bold"),
-                 width=28, anchor="center").pack(side="left")
-        
-        _nav_btn(nav_f, "»", self._next_week).pack(side="left", padx=(5, 10))
-        
-        today_b = tk.Button(nav_f, text="Hôm nay", bg="#4f46e5", fg="white",
-                            font=("Segoe UI", 8, "bold"), relief="flat",
-                            cursor="hand2", padx=8, pady=4, bd=0, command=self._go_today)
-        today_b.pack(side="left")
-        
-        self._offset_badge = tk.Label(nav_f, text="", bg="#dcfce7",
-                                      fg="#15803d", font=("Segoe UI", 7, "bold"),
-                                      padx=6, pady=2)
-        self._offset_badge.pack(side="left", padx=8)
-
         # ── Legend Bar (Pill Badges)
+        legend_frm = tk.Frame(self, bg=C_SURFACE)
+        legend_frm.pack(fill="x", padx=20, pady=(0, 10))
         
+        from gui.theme import status_badge
+        tk.Label(legend_frm, text="Chú thích:", bg=C_SURFACE, fg=C_MUTED, 
+                 font=("Segoe UI", 8, "bold")).pack(side="left", padx=(0, 10))
+
+        
+        for text, bg, fg in LEGEND:
+            b = tk.Label(legend_frm, text=f"  {text}  ", bg=bg, fg=fg,
+                         font=("Segoe UI", 8, "bold"), padx=4, pady=2,
+                         relief="flat", highlightthickness=1, highlightbackground="#e2e8f0")
+            b.pack(side="left", padx=4)
+            
         # ── Week summary stats bar (Fixed at bottom)
         self._stats_bar = tk.Frame(self, bg=C_SURFACE)
         self._stats_bar.pack(side="bottom", fill="x", padx=20, pady=(0, 10))
+
 
 
 
@@ -330,16 +331,21 @@ class ScheduleFrame(tk.Frame):
             "Da duyet":  ("#dcfce7", "#15803d"),
             "Cho duyet": ("#fef3c7", "#b45309"),
             "Tu choi":   ("#fdf2f8", "#db2777"),
+            "Lich day":  ("#e0f2fe", "#0369a1"),
         }
-        for label, status in entries:
+        for label, status, is_mine in entries:
             sbg, sfg = STATUS_COLORS.get(status, ("#f1f5f9", "#475569"))
+            if is_mine: sbg, sfg = ("#4f46e5", "white")
+            
             row = tk.Frame(body, bg="#ffffff",
-                           highlightthickness=1, highlightbackground="#e2e8f0")
+                           highlightthickness=1, highlightbackground="#4f46e5" if is_mine else "#e2e8f0")
             row.pack(fill="x", pady=4)
-            tk.Label(row, text=f"  {label}", bg="#ffffff", fg="#1e293b",
-                     font=("Segoe UI", 10), anchor="w").pack(
+            
+            prefix = "⭐ [Của tôi] " if is_mine else ""
+            tk.Label(row, text=f"  {prefix}{label}", bg="#ffffff", fg="#1e1b4b" if is_mine else "#1e293b",
+                     font=("Segoe UI", 10, "bold" if is_mine else "normal"), anchor="w").pack(
                 side="left", padx=8, pady=8, fill="x", expand=True)
-            tk.Label(row, text=f"  {status}  ",
+            tk.Label(row, text=f"  {'SỞ HỮU' if is_mine else status}  ",
                      bg=sbg, fg=sfg,
                      font=("Segoe UI", 8, "bold")).pack(
                 side="right", padx=8, pady=8)
@@ -360,7 +366,16 @@ class ScheduleFrame(tk.Frame):
         for w in self._grid_frame.winfo_children():
             if w != getattr(self, "_stats_bar", None):
                 w.destroy()
+        
         room_filter = self._v_room.get()
+        from gui.theme import get_q
+        search_q = get_q(self._v_search, "Tìm môn, giảng viên...")
+
+        
+        is_compact = self._compact_mode.get()
+        cell_min_h = 85 if is_compact else 125
+        col_min_w = 145 if is_compact else 170
+
         schedule_rows = self.booking_ctrl.build_schedule(self._week_offset) # type: ignore
 
         today = dt.date.today()
@@ -369,21 +384,39 @@ class ScheduleFrame(tk.Frame):
         if mon <= today <= mon + dt.timedelta(days=6):
             today_col = today.weekday()
 
+        # Detect current slot highlight
+        now_time = dt.datetime.now().strftime("%H:%M")
+        SLOT_TIME_RANGES = {
+            "Ca 1": ("07:00", "09:30"), "Ca 2": ("09:35", "12:00"),
+            "Ca 3": ("13:00", "15:30"), "Ca 4": ("15:35", "18:00"),
+            "Ca 5": ("18:15", "20:45"),
+        }
+        active_slot_key = None
+        if self._week_offset == 0:
+            for k, (st, en) in SLOT_TIME_RANGES.items():
+                if st <= now_time <= en:
+                    active_slot_key = k
+                    break
+
         lookup = {}
         for s in schedule_rows: # type: ignore
             if room_filter != "Tất cả phòng" and s.room_id != room_filter: # type: ignore
                 continue
+            if search_q and search_q not in s.label.lower() and search_q not in s.room_id.lower():
+                continue
             key = (s.weekday, s.slot) # type: ignore
-            lookup.setdefault(key, []).append((s.label, s.status)) # type: ignore
+            is_mine = (self.current_user and s.user_id == self.current_user.user_id)
+            lookup.setdefault(key, []).append((s.label, s.status, is_mine)) # type: ignore
+
 
         gf = self._grid_frame
         gf.configure(padx=10, pady=10)
 
         # ── Corner cell (Balanced size)
         tk.Label(gf, text="CA / NGÀY", bg="#1e293b", fg="#64748b",
-                 font=("Segoe UI", 10, "bold"),
-                 width=16, height=4, relief="flat").grid(
-                     row=0, column=0, sticky="nsew", padx=1, pady=1)
+                 font=("Segoe UI", 9 if is_compact else 10, "bold"),
+                 width=12 if is_compact else 16, height=3 if is_compact else 4, 
+                 relief="flat").grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
 
         # ── Day Headers
         for ci, day in enumerate(DAYS):
@@ -394,35 +427,40 @@ class ScheduleFrame(tk.Frame):
             hdr_bg = "#4f46e5" if is_today else "#1e293b"
             accent_fg = "#c7d2fe" if is_today else "#94a3b8"
             
-            hdr_f = tk.Frame(gf, bg=hdr_bg, padx=12, pady=12)
+            hdr_f = tk.Frame(gf, bg=hdr_bg, padx=8, pady=8 if is_compact else 12)
             hdr_f.grid(row=0, column=ci + 1, sticky="nsew", padx=1, pady=1)
-            gf.columnconfigure(ci + 1, minsize=165, weight=1)
+            gf.columnconfigure(ci + 1, minsize=col_min_w, weight=1)
 
             tk.Label(hdr_f, text=day.upper(), bg=hdr_bg, fg=accent_fg,
-                     font=("Segoe UI", 8, "bold")).pack()
+                     font=("Segoe UI", 7 if is_compact else 8, "bold")).pack()
             tk.Label(hdr_f, text=date_str, bg=hdr_bg, fg="white",
-                     font=("Segoe UI", 18, "bold")).pack()
+                     font=("Segoe UI", 14 if is_compact else 18, "bold")).pack()
 
         # ── Time Slots & Grid Cells
         for ri, (shift_lbl, slot_key) in enumerate(zip(SLOTS_LBL, SLOT_KEYS)):
             # Row header
-            side_f = tk.Frame(gf, bg="#1e293b", padx=12, pady=12)
+            is_active_slot = (slot_key == active_slot_key)
+            row_bg = "#4f46e5" if is_active_slot else "#1e293b"
+            
+            side_f = tk.Frame(gf, bg=row_bg, padx=8, pady=8 if is_compact else 12)
             side_f.grid(row=ri + 1, column=0, sticky="nsew", padx=1, pady=1)
-            gf.rowconfigure(ri + 1, minsize=120, weight=1)
+            gf.rowconfigure(ri + 1, minsize=cell_min_h, weight=1)
 
-            tk.Label(side_f, text=shift_lbl.split("\n")[0], bg="#1e293b", fg="white",
-                     font=("Segoe UI", 10, "bold")).pack()
-            tk.Label(side_f, text=shift_lbl.split("\n")[1], bg="#1e293b", fg="#94a3b8",
-                     font=("Segoe UI", 8)).pack()
+            tk.Label(side_f, text=shift_lbl.split("\n")[0], bg=row_bg, fg="white",
+                     font=("Segoe UI", 9 if is_compact else 10, "bold")).pack()
+            tk.Label(side_f, text=shift_lbl.split("\n")[1], bg=row_bg, fg="#94a3b8" if not is_active_slot else "#c7d2fe",
+                     font=("Segoe UI", 7 if is_compact else 8)).pack()
 
             for ci, day in enumerate(DAYS):
                 entries = lookup.get((day, slot_key), []) # type: ignore
                 is_today_col = (ci == today_col)
+                is_current_cell = (is_today_col and is_active_slot)
                 date_for_cell = mon + dt.timedelta(days=ci) # type: ignore
                 date_iso = date_for_cell.isoformat() # type: ignore
                 
                 # Cell container
-                cell_outer = tk.Frame(gf, bg=GRID_BORDER, padx=1, pady=1)
+                border_c = "#4f46e5" if is_current_cell else GRID_BORDER
+                cell_outer = tk.Frame(gf, bg=border_c, padx=2 if is_current_cell else 1, pady=2 if is_current_cell else 1)
                 cell_outer.grid(row=ri + 1, column=ci + 1, sticky="nsew", padx=1, pady=1)
                 
                 bg = "#fefce8" if is_today_col else "white"
@@ -430,26 +468,37 @@ class ScheduleFrame(tk.Frame):
                 cell.pack(fill="both", expand=True)
                 
                 if entries:
-                    main_label, main_status = entries[0]
+                    main_label, main_status, is_mine = entries[0]
                     s_bg, s_fg = CELL_COLORS.get(main_status, ("#f1f5f9", "#475569"))
-                    accent = CELL_ACCENT.get(main_status, "#cbd5e1")
+                    if is_mine:
+                        s_bg, s_fg = ("#eef2ff", "#4f46e5") # Indigo theme for mine
+                    accent = "#4f46e5" if is_mine else CELL_ACCENT.get(main_status, "#cbd5e1")
                     
                     # High-end card design
-                    tk.Frame(cell, bg=accent, width=4).pack(side="left", fill="y")
+                    tk.Frame(cell, bg=accent, width=4 if not is_mine else 6).pack(side="left", fill="y")
                     
-                    inner = tk.Frame(cell, bg=bg, padx=12, pady=10)
+                    inner = tk.Frame(cell, bg=bg, padx=8 if is_compact else 12, pady=6 if is_compact else 10)
                     inner.pack(fill="both", expand=True)
                     
                     # Status Badge (Pill style)
-                    badge = tk.Frame(inner, bg=s_bg, padx=6, pady=2)
-                    badge.pack(anchor="nw")
+                    badge_f = tk.Frame(inner, bg=bg)
+                    badge_f.pack(anchor="nw", fill="x")
+                    
+                    badge = tk.Frame(badge_f, bg=s_bg, padx=4, pady=1)
+                    badge.pack(side="left")
                     tk.Label(badge, text=main_status.upper(), bg=s_bg, fg=s_fg,
-                             font=("Segoe UI", 7, "bold")).pack()
+                             font=("Segoe UI", 6 if is_compact else 7, "bold")).pack()
+                    
+                    if is_mine:
+                        my_b = tk.Frame(badge_f, bg="#4f46e5", padx=4, pady=1)
+                        my_b.pack(side="left", padx=4)
+                        tk.Label(my_b, text="CỦA TÔI", bg="#4f46e5", fg="white",
+                                 font=("Segoe UI", 6 if is_compact else 7, "bold")).pack()
                     
                     # Subject / Label
-                    tk.Label(inner, text=main_label, bg=bg, fg="#1e293b",
-                             font=("Segoe UI", 10, "bold"), justify="left", anchor="nw",
-                             wraplength=140).pack(fill="both", expand=True, pady=(4, 0))
+                    tk.Label(inner, text=main_label, bg=bg, fg="#1e1b4b" if is_mine else "#1e293b",
+                             font=("Segoe UI", 9 if is_compact else 10, "bold"), justify="left", anchor="nw",
+                             wraplength=120 if is_compact else 140).pack(fill="both", expand=True, pady=(2, 0))
                     
                     if len(entries) > 1:
                         tk.Label(inner, text=f"+ {len(entries)-1} lịch khác...",

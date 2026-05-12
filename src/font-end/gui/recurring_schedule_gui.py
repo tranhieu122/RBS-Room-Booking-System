@@ -145,9 +145,9 @@ class RecurringScheduleFrame(tk.Frame):
                      fg=C_MUTED, bg=C_SURFACE).pack(anchor="w")
 
             # Hover interaction
-            outer.config(highlightthickness=1, highlightbackground=C_BORDER)
-            def _on_enter(e): outer.config(highlightbackground=color, highlightthickness=2)
-            def _on_leave(e): outer.config(highlightbackground=C_BORDER, highlightthickness=1)
+            outer.config(highlightthickness=2, highlightbackground=C_BORDER)
+            def _on_enter(e, o=outer, c=color): o.config(highlightbackground=c)
+            def _on_leave(e, o=outer): o.config(highlightbackground=C_BORDER)
             card.bind("<Enter>", _on_enter)
             card.bind("<Leave>", _on_leave)
 
@@ -315,7 +315,6 @@ class RecurringScheduleFrame(tk.Frame):
                                    state="readonly")
         self._de_start.set_date(dt.date.today())
         self._de_start.pack(fill="x", ipady=3)
-        self._de_start.bind("<Button-1>", lambda _: self._de_start.drop_down())
 
         f_d2 = tk.Frame(f_dates, bg=C_SURFACE); f_d2.grid(row=0, column=1, sticky="ew", padx=(5, 0))
         self._de_end = DateEntry(f_d2, font=("Segoe UI", 10), date_pattern="yyyy-mm-dd",
@@ -323,7 +322,6 @@ class RecurringScheduleFrame(tk.Frame):
                                  state="readonly")
         self._de_end.set_date(dt.date.today() + dt.timedelta(weeks=16))
         self._de_end.pack(fill="x", ipady=3)
-        self._de_end.bind("<Button-1>", lambda _: self._de_end.drop_down())
 
         # ── Preview Card ────────────────────────────────────────────────────
         self._preview_outer, self._preview_inner = make_card(body, padx=16, pady=12, shadow=False)
