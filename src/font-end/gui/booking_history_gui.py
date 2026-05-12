@@ -1,4 +1,4 @@
-# booking_history_gui.py  –  User's booking history screen
+# booking_history_gui.py  –  Màn hình lịch sử đặt phòng của người dùng
 from __future__ import annotations
 import datetime as dt
 import tkinter as tk
@@ -28,16 +28,16 @@ class BookingHistoryFrame(tk.Frame):
         self.refresh()
 
     def _build(self) -> None:
-        # Header
+        # Tiêu đề trang
         page_header(self, "📋 Lịch sử đặt phòng của tôi", 
                    subtitle="Xem và quản lý các yêu cầu đặt phòng bạn đã gửi",
                    icon="📅")
         
-        # ── Toolbar / Filters ────────────────────────────────────────────────
+        # ── Thanh công cụ / Bộ lọc ─────────────────────────────────────────────
         toolbar = tk.Frame(self, bg=C_BG)
         toolbar.pack(fill="x", padx=20, pady=(0, 10))
         
-        # Status Filter
+        # Bộ lọc trạng thái
         tk.Label(toolbar, text="Trạng thái:", bg=C_BG,
                  font=("Segoe UI", 10, "bold")).pack(side="left", padx=(0, 6))
         
@@ -51,7 +51,7 @@ class BookingHistoryFrame(tk.Frame):
         status_cb.pack(side="left")
         status_cb.bind("<<ComboboxSelected>>", lambda _: self.refresh())
         
-        # Search Box
+        # Ô tìm kiếm
         tk.Label(toolbar, text="Tìm kiếm:", bg=C_BG,
                  font=("Segoe UI", 10, "bold")).pack(side="left", padx=(20, 6))
         
@@ -64,10 +64,10 @@ class BookingHistoryFrame(tk.Frame):
         )
         s_box.pack(side="left")
 
-        # Refresh Button
+        # Nút Làm mới
         btn(toolbar, "Làm mới", self.refresh, variant="ghost", icon="🔄").pack(side="right")
 
-        # ── Main Content Area (Treeview) ─────────────────────────────────────
+        # ── Khu vực nội dung chính (Treeview) ───────────────────────────────────
         content_wrap = tk.Frame(self, bg=C_SURFACE, highlightthickness=1,
                                 highlightbackground=C_BORDER, padx=14, pady=14)
         content_wrap.pack(fill="both", expand=True, padx=20, pady=(0, 20))
@@ -80,11 +80,11 @@ class BookingHistoryFrame(tk.Frame):
         self.tree = make_tree(content_wrap, cols, hdrs, wids)
         with_scrollbar(content_wrap, self.tree)
         
-        # Bind double-click or selection to show details
+        # Ràng buộc sự kiện nhấn đúp hoặc chọn dòng để xem chi tiết
         self.tree.bind("<<TreeviewSelect>>", lambda _: self._on_row_selected())
         self.tree.bind("<Double-1>", lambda _: self._show_details_dialog())
 
-        # ── Bottom Action Bar ────────────────────────────────────────────────
+        # ── Thanh hành động phía dưới ──────────────────────────────────────────
         self.actions_f = tk.Frame(self, bg=C_BG)
         self.actions_f.pack(fill="x", padx=20, pady=(0, 20))
         

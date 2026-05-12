@@ -7,7 +7,7 @@ from typing import Any
 from tkcalendar import DateEntry  # type: ignore[import-untyped]
 
 from gui.theme import (
-    C_BG, C_SURFACE, C_BORDER, C_PRIMARY, C_PRIMARY_H,
+    C_BG, C_SURFACE, C_BORDER, C_PRIMARY, C_PRIMARY_H, C_LIGHT,
     C_MUTED, C_TEXT, C_SUCCESS, C_SUCCESS_BG, C_DANGER, C_DANGER_BG,
     C_WARNING, C_WARNING_BG, C_DARK,
     F_BODY, F_BODY_B, F_SECTION, F_SMALL, F_BTN,
@@ -106,12 +106,13 @@ class RecurringScheduleFrame(tk.Frame):
         self._stats_container = tk.Frame(self, bg=C_BG)
         self._stats_container.pack(fill="x", padx=0, pady=(10, 0)) # Full width
         self._build_stats_bar()
+        self._build_workflow_strip()
 
         # ── Main Content Area ────────────────────────────────────────────────
         pane = tk.Frame(self, bg=C_BG)
         pane.pack(fill="both", expand=True, padx=0, pady=(0, 0)) # Full width
-        pane.columnconfigure(0, weight=4)
-        pane.columnconfigure(1, weight=6)
+        pane.columnconfigure(0, weight=3)
+        pane.columnconfigure(1, weight=7)
         pane.rowconfigure(0, weight=1)
 
         self._build_form(pane)
@@ -159,6 +160,31 @@ class RecurringScheduleFrame(tk.Frame):
         _stat_card(3, "⚠️", "Đã hủy/Xong", "_lbl_ended_rules", C_DANGER)
 
     # ── LEFT: Form ────────────────────────────────────────────────────────────
+
+    def _build_workflow_strip(self) -> None:
+        wrap = tk.Frame(self, bg=C_BG)
+        wrap.pack(fill="x", padx=20, pady=(0, 8))
+
+        outer, card = make_card(wrap, padx=14, pady=10, shadow=False)
+        outer.pack(fill="x")
+
+        steps = [
+            ("1", "Nhap thong tin", "Mon hoc, giang vien, phong"),
+            ("2", "Chon chu ky", "Thu trong tuan va khung gio"),
+            ("3", "Quan ly lich", "Duyet, sua, xem cac buoi"),
+        ]
+        for idx, (num, title, desc) in enumerate(steps):
+            item = tk.Frame(card, bg=C_SURFACE)
+            item.pack(side="left", fill="x", expand=True, padx=(0, 12 if idx < len(steps) - 1 else 0))
+
+            tk.Label(item, text=num, bg="#eef2ff", fg=C_PRIMARY,
+                     font=("Segoe UI", 10, "bold"), width=3, pady=4).pack(side="left", padx=(0, 10))
+            txt = tk.Frame(item, bg=C_SURFACE)
+            txt.pack(side="left", fill="x", expand=True)
+            tk.Label(txt, text=title, bg=C_SURFACE, fg=C_TEXT,
+                     font=("Segoe UI", 9, "bold")).pack(anchor="w")
+            tk.Label(txt, text=desc, bg=C_SURFACE, fg=C_MUTED,
+                     font=("Segoe UI", 8)).pack(anchor="w")
 
     def _build_form(self, parent: tk.Frame) -> None:
         left_outer = tk.Frame(parent, bg=C_BG)
@@ -386,8 +412,12 @@ class RecurringScheduleFrame(tk.Frame):
 
         hdr = tk.Frame(card, bg=C_SURFACE, padx=16, pady=8)
         hdr.pack(fill="x")
-        tk.Label(hdr, text="Danh sach lich day chu ky", bg=C_SURFACE,
-                 fg=C_DARK, font=("Segoe UI", 10, "bold")).pack(side="left")
+        title_box = tk.Frame(hdr, bg=C_SURFACE)
+        title_box.pack(side="left")
+        tk.Label(title_box, text="Danh sach lich day chu ky", bg=C_SURFACE,
+                 fg=C_DARK, font=("Segoe UI", 11, "bold")).pack(anchor="w")
+        tk.Label(title_box, text="Double-click mot dong de xem cac buoi hoc da sinh",
+                 bg=C_SURFACE, fg=C_MUTED, font=("Segoe UI", 8)).pack(anchor="w")
         btn(hdr, "Lam moi", self._refresh_list,
             variant="ghost", icon="🔄").pack(side="right")
 
@@ -411,6 +441,17 @@ class RecurringScheduleFrame(tk.Frame):
         cb_filter.pack(side="left", padx=(6, 0))
         self._v_filter.trace_add("write", lambda *_: self._refresh_list())
 
+        legend = tk.Frame(card, bg=C_SURFACE, padx=16, pady=0)
+        legend.pack(fill="x", pady=(2, 8))
+        for text, bg in [
+            ("Cho duyet", "#fffbeb"),
+            ("Hoat dong", "#f0fdf4"),
+            ("Da xong", "#f8fafc"),
+            ("Huy", "#fff1f2"),
+        ]:
+            tk.Label(legend, text=f"  {text}  ", bg=bg, fg=C_TEXT,
+                     font=("Segoe UI", 8, "bold")).pack(side="left", padx=(0, 8))
+
         # Treeview: rules
         cols = ("id", "subject", "days", "time", "date_range", "room", "count", "status")
         heads = ("Ma", "Mon hoc", "Thu trong tuan", "Khung gio",
@@ -427,6 +468,12 @@ class RecurringScheduleFrame(tk.Frame):
         self._btn_view = btn(left_act, "Xem Chi Tiết", self._view_occurrences,
             variant="primary", icon="📋")
         self._btn_view.pack(side="left")
+
+        self._selected_info_lbl = tk.Label(
+            left_act, text="Chua chon lich", bg="#f8fafc", fg=C_MUTED,
+            font=("Segoe UI", 9, "bold")
+        )
+        self._selected_info_lbl.pack(side="left", padx=(10, 4))
         
         self._btn_edit = btn(left_act, "Chỉnh Sửa", self._edit_rule,
             variant="outline", icon="✏️")
@@ -465,6 +512,7 @@ class RecurringScheduleFrame(tk.Frame):
         vsb.pack(side="right", fill="y")
 
         self._tree.bind("<<TreeviewSelect>>", self._on_rule_select)
+        self._tree.bind("<Double-1>", lambda _event: self._view_occurrences())
         
         # Hover effect on tree rows (simulated)
         def _on_motion(e):
@@ -716,17 +764,28 @@ class RecurringScheduleFrame(tk.Frame):
             
             self._tree.item(item, tags=tuple(tags))
 
-        self._tree.tag_configure("pending_row", background="#fffbeb", foreground="#b45309")
-        self._tree.tag_configure("active_row",  background="#f0fdf4", foreground="#15803d")
-        self._tree.tag_configure("huy_row",      background="#fff1f2", foreground="#e11d48")
-        self._tree.tag_configure("done_row",     background="#f8fafc", foreground="#64748b")
+        self._tree.tag_configure("pending_row", background="#fffbeb", foreground=C_TEXT)
+        self._tree.tag_configure("active_row",  background="#f0fdf4", foreground=C_TEXT)
+        self._tree.tag_configure("huy_row",      background="#fff1f2", foreground=C_TEXT)
+        self._tree.tag_configure("done_row",     background="#f8fafc", foreground=C_TEXT)
 
     def _on_rule_select(self, _event: Any = None) -> None:
         sel = self._tree.selection()
         if sel:
             self._selected_rule_id = int(self._tree.item(sel[0], "values")[0])
+            vals = self._tree.item(sel[0], "values")
+            subject = str(vals[1]) if len(vals) > 1 else ""
+            room = str(vals[5]) if len(vals) > 5 else ""
+            status = str(vals[7]) if len(vals) > 7 else ""
+            if hasattr(self, "_selected_info_lbl"):
+                self._selected_info_lbl.config(
+                    text=f"#{self._selected_rule_id} | {subject[:28]} | {room} | {status}",
+                    fg=C_TEXT,
+                )
         else:
             self._selected_rule_id = None
+            if hasattr(self, "_selected_info_lbl"):
+                self._selected_info_lbl.config(text="Chua chon lich", fg=C_MUTED)
 
     def _edit_rule(self) -> None:
         if self._selected_rule_id is None:

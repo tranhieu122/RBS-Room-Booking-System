@@ -1,11 +1,11 @@
-# gui/theme.py  –  shared palette, fonts, widget factories
+# gui/theme.py  –  Bảng màu dùng chung, phông chữ và các hàm tạo widget
 from __future__ import annotations
 import datetime as _dt
 import tkinter as tk
 from tkinter import ttk
 from typing import Any, Optional, Callable
 
-# ── Palette: clean white UI ──────────────────────────────────────────
+# ── Bảng màu: Giao diện trắng sạch sẽ ───────────────────────────────────────
 C_DARK       = "#111827"
 C_PRIMARY    = "#2563eb"
 C_PRIMARY_H  = "#1d4ed8"
@@ -28,14 +28,14 @@ ROW_ODD      = "#ffffff"
 ROW_EVEN     = "#f9fafb"
 
 
-# ── Typography Scale (8pt base, 4px grid) ────────────────────────────────────
-# Heading  : 20 bold  → page titles
-# SubHead  : 14 bold  → section headers / dialog titles
-# Body     : 10 reg   → content, labels
-# BodyBold : 10 bold  → emphasis
-# Small    :  9 reg   → captions, hints
-# Input    : 11 reg   → form entries
-# Button   : 10 bold  → CTAs
+# ── Tỷ lệ Typography (Cơ sở 8pt, lưới 4px) ───────────────────────────────────
+# Tiêu đề lớn : 20 bold  → Tiêu đề trang
+# Phân đoạn   : 14 bold  → Tiêu đề phần / Tiêu đề hộp thoại
+# Nội dung    : 10 reg   → Nội dung chính, nhãn (label)
+# Nội dung đậm: 10 bold  → Nhấn mạnh
+# Nhỏ         :  9 reg   → Chú thích, gợi ý
+# Nhập liệu   : 11 reg   → Các ô nhập liệu
+# Nút bấm     : 10 bold  → Các nút kêu gọi hành động (CTA)
 F_TITLE   = ("Segoe UI", 20, "bold")
 F_SECTION = ("Segoe UI", 14, "bold")
 F_BODY    = ("Segoe UI", 10)
@@ -46,10 +46,10 @@ F_BTN     = ("Segoe UI", 10, "bold")
 
 
 def apply_theme(style: ttk.Style) -> None:
-    """Enhanced version with better table styling."""
+    """Phiên bản cải tiến với kiểu dáng bảng tốt hơn."""
     style.theme_use("clam")
 
-    # ── Treeview IMPROVED ──────────────────────────────────────────────────
+    # ── Cải tiến Treeview ───────────────────────────────────────────────────
     style.configure(
         "TV.Treeview.Heading",
         background="#f9fafb",
@@ -63,18 +63,19 @@ def apply_theme(style: ttk.Style) -> None:
               background=[("active", "#eff6ff")],
               foreground=[("active", C_PRIMARY_H)])
 
-    # MAIN IMPROVEMENT: Better row height & alternating colors
+    # CẢI TIẾN CHÍNH: Chiều cao hàng tốt hơn và màu sắc xen kẽ
     style.configure(
         "TV.Treeview",
-        rowheight=44,  # INCREASED from 36 - Much more readable!
+        rowheight=44,  # TĂNG từ 36 - Dễ đọc hơn rất nhiều!
         font=F_BODY,
+        foreground=C_TEXT,
         fieldbackground=C_SURFACE,
         background=C_SURFACE,
         borderwidth=0,
         relief="flat"
     )
 
-    # IMPROVED: Better hover and selection states
+    # CẢI TIẾN: Trạng thái di chuột (hover) và chọn (selection) tốt hơn
     style.map(
         "TV.Treeview",
         background=[
@@ -406,13 +407,13 @@ def _tag_cfg(tree: ttk.Treeview) -> None:
     tree.tag_configure("odd",       background=ROW_ODD)
     tree.tag_configure("even",      background=ROW_EVEN)
     tree.tag_configure("empty",     foreground=C_MUTED, font=("Segoe UI", 10, "italic"))
-    tree.tag_configure("Da duyet",  background=C_SUCCESS_BG, foreground=C_SUCCESS)
-    tree.tag_configure("Cho duyet", background=C_WARNING_BG, foreground=C_WARNING)
-    tree.tag_configure("Tu choi",   background=C_DANGER_BG,  foreground=C_DANGER)
-    tree.tag_configure("Da huy",    background="#f1f5f9",   foreground=C_MUTED)
-    tree.tag_configure("Hoat dong", background=C_SUCCESS_BG, foreground=C_SUCCESS)
-    tree.tag_configure("Bao tri",   background=C_WARNING_BG, foreground=C_WARNING)
-    tree.tag_configure("Khoa",      background=C_DANGER_BG,  foreground=C_DANGER)
+    tree.tag_configure("Da duyet",  background=C_SUCCESS_BG, foreground=C_TEXT)
+    tree.tag_configure("Cho duyet", background=C_WARNING_BG, foreground=C_TEXT)
+    tree.tag_configure("Tu choi",   background=C_DANGER_BG,  foreground=C_TEXT)
+    tree.tag_configure("Da huy",    background="#f1f5f9",   foreground=C_TEXT)
+    tree.tag_configure("Hoat dong", background=ROW_ODD, foreground=C_TEXT)
+    tree.tag_configure("Bao tri",   background=C_WARNING_BG, foreground=C_TEXT)
+    tree.tag_configure("Khoa",      background=C_DANGER_BG,  foreground=C_TEXT)
 
 
 def fill_tree(tree: ttk.Treeview, rows: list[tuple[object, ...]],
@@ -879,21 +880,35 @@ class ScrimmedDialog(tk.Toplevel):
         
         # Bind events to clean up scrim
         self.bind("<Destroy>", self._on_destroy)
-        self.root.bind("<Configure>", lambda _: self._reposition_scrim(), add="+")
+        self._configure_bind_id = self.root.bind(
+            "<Configure>",
+            lambda _: self._reposition_scrim(),
+            add="+",
+        )
 
     def _reposition_scrim(self) -> None:
-        if not self.root.winfo_exists(): return
-        x = self.root.winfo_rootx()
-        y = self.root.winfo_rooty()
-        w = self.root.winfo_width()
-        h = self.root.winfo_height()
-        self.scrim.geometry(f"{w}x{h}+{x}+{y}")
-        self.scrim.lift()
+        try:
+            if not self.root.winfo_exists() or not self.scrim.winfo_exists():
+                return
+            x = self.root.winfo_rootx()
+            y = self.root.winfo_rooty()
+            w = self.root.winfo_width()
+            h = self.root.winfo_height()
+            self.scrim.geometry(f"{w}x{h}+{x}+{y}")
+            self.scrim.lift()
+        except tk.TclError:
+            return
 
     def _on_destroy(self, event: tk.Event) -> None:
         if event.widget == self:
-            if self.scrim.winfo_exists():
-                self.scrim.destroy()
+            try:
+                if self._configure_bind_id:
+                    self.root.unbind("<Configure>", self._configure_bind_id)
+                    self._configure_bind_id = None
+                if self.scrim.winfo_exists():
+                    self.scrim.destroy()
+            except tk.TclError:
+                pass
 
     def center_on_parent(self) -> None:
         self.update_idletasks()

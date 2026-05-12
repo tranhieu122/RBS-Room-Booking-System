@@ -2,7 +2,7 @@
 from __future__ import annotations
 import datetime as dt
 import tkinter as tk
-from tkinter import ttk
+from tkinter import messagebox, ttk
 from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_DARK, C_TEXT, C_PRIMARY, C_PRIMARY_H, C_MUTED,
                        F_TITLE, F_SECTION, F_BODY_B, page_header, btn, make_card)
 from gui.class_student_list_gui import ClassStudentListDialog
@@ -26,12 +26,12 @@ SLOTS_LBL = [
 ]
 SLOT_KEYS = ["Ca 1", "Ca 2", "Ca 3", "Ca 4", "Ca 5"]
 
-# Modern palette with higher contrast
+# Modern light palette with higher readability
 CELL_COLORS = {
-    "Da duyet":  ("#dcfce7", "#15803d"),
-    "Cho duyet": ("#fef3c7", "#b45309"),
-    "Tu choi":   ("#fdf2f8", "#db2777"),
-    "Lich day":  ("#e0f2fe", "#0369a1"),
+    "Da duyet":  ("#ecfdf5", C_TEXT),
+    "Cho duyet": ("#fffbeb", C_TEXT),
+    "Tu choi":   ("#fdf2f8", C_TEXT),
+    "Lich day":  ("#eff6ff", C_TEXT),
 }
 CELL_ACCENT = {
     "Da duyet":  "#16a34a",
@@ -48,7 +48,9 @@ LEGEND = [
 ]
 
 # Subtle grid border color
-GRID_BORDER = "#e2e8f0" 
+GRID_BORDER = "#e5e7eb"
+HEADER_BG = "#f8fafc"
+HEADER_ACTIVE_BG = "#eef2ff"
 
 def _cell_tooltip(cell: tk.Widget, entries: "list[tuple[str, str]]",
                    date_str: str, slot_key: str) -> None:
@@ -146,8 +148,8 @@ class ScheduleFrame(tk.Frame):
         header.pack(fill="x")
         
         # ── Toolbar: Navigation + Actions
-        toolbar_outer, toolbar = make_card(self, padx=16, pady=6, shadow=True)
-        toolbar_outer.pack(fill="x", padx=20, pady=(0, 10))
+        toolbar_outer, toolbar = make_card(self, padx=16, pady=10, shadow=True)
+        toolbar_outer.pack(fill="x", padx=20, pady=(0, 8))
 
         # Left: Navigation
         nav_f = tk.Frame(toolbar, bg=C_SURFACE)
@@ -156,7 +158,7 @@ class ScheduleFrame(tk.Frame):
         btn(nav_f, "«", self._prev_week, variant="ghost", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(0, 2))
         tk.Label(nav_f, textvariable=self._week_lbl_var, bg=C_SURFACE,
                  fg=C_DARK, font=("Segoe UI", 10, "bold"),
-                 width=22, anchor="center").pack(side="left")
+                 width=26, anchor="center").pack(side="left")
         btn(nav_f, "»", self._next_week, variant="ghost", font=("Segoe UI", 9, "bold")).pack(side="left", padx=(2, 10))
         
         btn(nav_f, "Hôm nay", self._go_today, variant="primary", font=("Segoe UI", 9, "bold")).pack(side="left", padx=5)
@@ -173,7 +175,7 @@ class ScheduleFrame(tk.Frame):
         # 🔍 Search Bar
         from gui.theme import search_box
         s_box = search_box(filter_f, self._v_search, placeholder="Tìm môn, giảng viên...", 
-                           width=18, on_type=self._refresh)
+                           width=24, on_type=self._refresh)
         s_box.pack(side="left", padx=(0, 12))
         
         # 📏 Compact Toggle
@@ -193,6 +195,10 @@ class ScheduleFrame(tk.Frame):
 
             
         # ── Week summary stats bar (Fixed at bottom)
+        self._legend_bar = tk.Frame(self, bg=C_BG)
+        self._legend_bar.pack(fill="x", padx=20, pady=(0, 8))
+        self._build_legend()
+
         self._stats_bar = tk.Frame(self, bg=C_SURFACE)
         self._stats_bar.pack(side="bottom", fill="x", padx=20, pady=(0, 10))
 
@@ -257,6 +263,25 @@ class ScheduleFrame(tk.Frame):
         self.after(150, lambda: _bind_controls(self._grid_frame))
         # Also bind to the canvas itself
         _bind_controls(canvas)
+
+    def _build_legend(self) -> None:
+        for w in self._legend_bar.winfo_children():
+            w.destroy()
+
+        legend_outer, legend = make_card(self._legend_bar, padx=12, pady=8, shadow=False)
+        legend_outer.pack(fill="x")
+
+        tk.Label(legend, text="Chu thich", bg=C_SURFACE, fg=C_MUTED,
+                 font=("Segoe UI", 8, "bold")).pack(side="left", padx=(0, 12))
+        for label, bg, accent in LEGEND:
+            item = tk.Frame(legend, bg=C_SURFACE)
+            item.pack(side="left", padx=(0, 14))
+            swatch = tk.Frame(item, bg=bg, width=26, height=14,
+                              highlightthickness=1, highlightbackground=GRID_BORDER)
+            swatch.pack(side="left")
+            tk.Frame(swatch, bg=accent, width=4).pack(side="left", fill="y")
+            tk.Label(item, text=label, bg=C_SURFACE, fg=C_TEXT,
+                     font=("Segoe UI", 8)).pack(side="left", padx=(6, 0))
 
     def _prev_week(self):
         self._week_offset -= 1
@@ -445,7 +470,7 @@ class ScheduleFrame(tk.Frame):
         gf.configure(padx=10, pady=10)
 
         # ── Corner cell (Balanced size)
-        tk.Label(gf, text="CA / NGÀY", bg="#1e293b", fg="#64748b",
+        tk.Label(gf, text="CA / NGÀY", bg=HEADER_BG, fg=C_MUTED,
                  font=("Segoe UI", 9 if is_compact else 10, "bold"),
                  width=12 if is_compact else 16, height=3 if is_compact else 4, 
                  relief="flat").grid(row=0, column=0, sticky="nsew", padx=1, pady=1)
@@ -456,8 +481,8 @@ class ScheduleFrame(tk.Frame):
             date_str = f"{date_for_col.day}/{date_for_col.month}" # type: ignore
             is_today = (ci == today_col)
             
-            hdr_bg = "#4f46e5" if is_today else "#1e293b"
-            accent_fg = "#c7d2fe" if is_today else "#94a3b8"
+            hdr_bg = HEADER_ACTIVE_BG if is_today else HEADER_BG
+            accent_fg = C_PRIMARY if is_today else C_MUTED
             
             hdr_f = tk.Frame(gf, bg=hdr_bg, padx=8, pady=8 if is_compact else 12)
             hdr_f.grid(row=0, column=ci + 1, sticky="nsew", padx=1, pady=1)
@@ -465,22 +490,22 @@ class ScheduleFrame(tk.Frame):
 
             tk.Label(hdr_f, text=day.upper(), bg=hdr_bg, fg=accent_fg,
                      font=("Segoe UI", 7 if is_compact else 8, "bold")).pack()
-            tk.Label(hdr_f, text=date_str, bg=hdr_bg, fg="white",
+            tk.Label(hdr_f, text=date_str, bg=hdr_bg, fg=C_TEXT,
                      font=("Segoe UI", 14 if is_compact else 18, "bold")).pack()
 
         # ── Time Slots & Grid Cells
         for ri, (shift_lbl, slot_key) in enumerate(zip(SLOTS_LBL, SLOT_KEYS)):
             # Row header
             is_active_slot = (slot_key == active_slot_key)
-            row_bg = "#4f46e5" if is_active_slot else "#1e293b"
+            row_bg = HEADER_ACTIVE_BG if is_active_slot else HEADER_BG
             
             side_f = tk.Frame(gf, bg=row_bg, padx=8, pady=8 if is_compact else 12)
             side_f.grid(row=ri + 1, column=0, sticky="nsew", padx=1, pady=1)
             gf.rowconfigure(ri + 1, minsize=cell_min_h, weight=1)
 
-            tk.Label(side_f, text=shift_lbl.split("\n")[0], bg=row_bg, fg="white",
+            tk.Label(side_f, text=shift_lbl.split("\n")[0], bg=row_bg, fg=C_TEXT,
                      font=("Segoe UI", 9 if is_compact else 10, "bold")).pack()
-            tk.Label(side_f, text=shift_lbl.split("\n")[1], bg=row_bg, fg="#94a3b8" if not is_active_slot else "#c7d2fe",
+            tk.Label(side_f, text=shift_lbl.split("\n")[1], bg=row_bg, fg=C_PRIMARY if is_active_slot else C_MUTED,
                      font=("Segoe UI", 7 if is_compact else 8)).pack()
 
             for ci, day in enumerate(DAYS):
@@ -504,7 +529,7 @@ class ScheduleFrame(tk.Frame):
 
                     s_bg, s_fg = CELL_COLORS.get(main_status, ("#f1f5f9", "#475569"))
                     if is_mine:
-                        s_bg, s_fg = ("#eef2ff", "#4f46e5") # Indigo theme for mine
+                        s_bg, s_fg = ("#eef2ff", C_TEXT)
                     accent = "#4f46e5" if is_mine else CELL_ACCENT.get(main_status, "#cbd5e1")
                     
                     # High-end card design
@@ -529,7 +554,7 @@ class ScheduleFrame(tk.Frame):
                                  font=("Segoe UI", 6 if is_compact else 7, "bold")).pack()
                     
                     # Subject / Label
-                    tk.Label(inner, text=main_label, bg=bg, fg="#1e1b4b" if is_mine else "#1e293b",
+                    tk.Label(inner, text=main_label, bg=bg, fg=C_TEXT,
                              font=("Segoe UI", 9 if is_compact else 10, "bold"), justify="left", anchor="nw",
                              wraplength=120 if is_compact else 140).pack(fill="both", expand=True, pady=(2, 0))
                     
@@ -549,7 +574,12 @@ class ScheduleFrame(tk.Frame):
                             # Fallback to old behavior if no source_id
                             self._show_cell_detail(ents, ds, dn, sk)
                             
-                    cell.bind("<Button-1>", _show_detail)
+                    def _bind_click_recursive(widget: tk.Widget) -> None:
+                        widget.bind("<Button-1>", _show_detail, add="+")
+                        for child in widget.winfo_children():
+                            _bind_click_recursive(child)
+
+                    _bind_click_recursive(cell)
 
 
                     # Interactions for occupied cells
@@ -588,8 +618,8 @@ class ScheduleFrame(tk.Frame):
         for ci, day in enumerate(DAYS):
             day_total = sum(1 for (d, _s), entries in lookup.items() if d == day and entries) # type: ignore
             is_active = day_total > 0
-            bg = "#1e1b4b" if is_active else "#f8fafc"
-            fg = "#818cf8" if is_active else "#94a3b8"
+            bg = "#eef2ff" if is_active else "#f8fafc"
+            fg = C_TEXT if is_active else C_MUTED
             
             f = tk.Frame(gf, bg=GRID_BORDER, padx=1, pady=1)
             f.grid(row=len(SLOT_KEYS) + 1, column=ci + 1, sticky="nsew", padx=1, pady=1)
@@ -651,7 +681,7 @@ class ScheduleFrame(tk.Frame):
 
     def _show_class_student_list(self, date_iso: str, day_name: str, slot: str, class_id: str) -> None:
         """Fetch class info and student list, then show the dialog."""
-        class_obj = self.booking_ctrl.get_class_info(class_id)
+        class_obj = self.booking_ctrl.get_class(class_id)
         if not class_obj:
             messagebox.showerror("Lỗi", f"Không tìm thấy thông tin cho lớp học {class_id}")
             return
@@ -660,8 +690,8 @@ class ScheduleFrame(tk.Frame):
         
         info = {
             "class_id": class_id,
-            "name": getattr(class_obj, "name", "N/A"),
-            "time": f"{day_name} - {slot}",
+            "name": getattr(class_obj, "name", getattr(class_obj, "purpose", "N/A")),
+            "time": f"{day_name} - {slot} ({getattr(class_obj, 'time_range', '')})",
             "room": getattr(class_obj, "room_id", "N/A")
         }
         

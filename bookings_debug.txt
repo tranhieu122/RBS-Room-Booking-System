@@ -1,0 +1,3 @@
+Found 2 bookings:
+{'id': 'BB0D8915A', 'user_id': 'GV001', 'user_name': 'Hà Bích Ngọc', 'status': 'Da duyet', 'booking_date': '2026-05-11'}
+{'id': 'BD4F81E40', 'user_id': 'GV001', 'user_name': 'Hà Bích Ngọc', 'status': 'Da duyet', 'booking_date': '2026-05-13'}

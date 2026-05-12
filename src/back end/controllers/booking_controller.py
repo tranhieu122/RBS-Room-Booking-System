@@ -661,6 +661,15 @@ class BookingController:
             WHERE ce.class_id = ?
         """
         rows = conn.execute(query, (class_id,)).fetchall()
+        if not rows and isinstance(class_id, str) and class_id.startswith("RULE-"):
+            rows = conn.execute(
+                """
+                SELECT id, full_name, role, email, phone
+                FROM users
+                WHERE role = 'Sinh vien' AND status = 'Hoat dong'
+                ORDER BY full_name
+                """
+            ).fetchall()
         
         # Format for UI
         students = []

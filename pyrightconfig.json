@@ -2,7 +2,10 @@
   "typeCheckingMode": "off",
   "extraPaths": [
     "src/back end",
-    "src/font-end"
+    "src/font-end",
+    "./src/font-end",
+    "./src/font-end",
+    "./src/font-end"
   ],
   "exclude": [
     "src/back end/logs/**",

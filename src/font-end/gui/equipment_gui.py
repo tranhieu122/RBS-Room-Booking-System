@@ -5,7 +5,7 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 from typing import Any
 from tkcalendar import DateEntry  # type: ignore[import-untyped]
-from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_MUTED,
+from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_MUTED, C_TEXT,
                        F_INPUT, make_tree, fill_tree, with_scrollbar, # type: ignore
                        page_header, btn, search_box, labeled_entry, get_q,
                        animate_count, confirm_dialog)
@@ -246,9 +246,9 @@ class EquipmentManagementFrame(tk.Frame):
         with_scrollbar(wrap, self.tree)
         
         # Configure status tags for visual cues
-        self.tree.tag_configure("maintain", background="#fffbeb") # Light Amber
-        self.tree.tag_configure("broken",   background="#fff1f2") # Light Rose
-        self.tree.tag_configure("active",   background="white")
+        self.tree.tag_configure("maintain", background="#fffbeb", foreground=C_TEXT) # Light Amber
+        self.tree.tag_configure("broken",   background="#fff1f2", foreground=C_TEXT) # Light Rose
+        self.tree.tag_configure("active",   background="white", foreground=C_TEXT)
 
     def refresh(self) -> None:
         selected = self.room_var.get().strip()

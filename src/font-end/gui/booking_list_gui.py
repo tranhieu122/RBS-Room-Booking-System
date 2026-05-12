@@ -1,4 +1,4 @@
-# booking_list_gui.py  –  booking list screen
+# booking_list_gui.py  –  Màn hình danh sách đặt phòng
 from __future__ import annotations
 import csv
 import datetime as dt
@@ -7,10 +7,10 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any
 from utils.export_excel import export_rows_to_excel  # type: ignore[import-untyped]
 from utils.export_ics import export_bookings_to_ics  # type: ignore[import-untyped]
-from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_MUTED,
+from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_MUTED, C_TEXT,
                        make_tree, fill_tree, with_scrollbar,
                        page_header, btn, search_box, get_q,
-                       toast, confirm_dialog)
+                       toast, confirm_dialog, make_card)
 
 from tkcalendar import DateEntry  # type: ignore[import-untyped]
 
@@ -34,9 +34,33 @@ class BookingListFrame(tk.Frame):
         self.refresh()
 
     def _build(self) -> None:
-        # Removed header for stability
+        # Loại bỏ tiêu đề để đảm bảo tính ổn định
 
-        # ── Search bar ───────────────────────────────────────────────────────
+        # ── Thanh tìm kiếm ─────────────────────────────────────────────────────
+        self._summary_labels: dict[str, tk.Label] = {}
+        summary_f = tk.Frame(self, bg=C_BG)
+        summary_f.pack(fill="x", padx=20, pady=(10, 8))
+        summary_defs = [
+            ("total", "Tong lich", "#eff6ff", "#2563eb"),
+            ("approved", "Da duyet", "#ecfdf5", "#16a34a"),
+            ("pending", "Cho duyet", "#fffbeb", "#f59e0b"),
+            ("rejected", "Tu choi", "#fdf2f8", "#db2777"),
+            ("rules", "Lich chu ky", "#f8fafc", "#64748b"),
+        ]
+        for i, (key, label, bg, accent) in enumerate(summary_defs):
+            summary_f.columnconfigure(i, weight=1)
+            outer, card = make_card(summary_f, padx=14, pady=10, shadow=True)
+            outer.grid(row=0, column=i, sticky="nsew", padx=6)
+            tk.Frame(card, bg=accent, width=4).pack(side="left", fill="y", padx=(0, 10))
+            body = tk.Frame(card, bg=C_SURFACE)
+            body.pack(side="left", fill="both", expand=True)
+            value = tk.Label(body, text="0", bg=C_SURFACE, fg=C_TEXT,
+                             font=("Segoe UI", 18, "bold"))
+            value.pack(anchor="w")
+            tk.Label(body, text=label.upper(), bg=C_SURFACE, fg=C_MUTED,
+                     font=("Segoe UI", 8, "bold")).pack(anchor="w")
+            self._summary_labels[key] = value
+
         search_bar = tk.Frame(self, bg=C_BG)
         search_bar.pack(fill="x", padx=20, pady=(0, 4))
         tk.Label(search_bar, text="Tìm kiếm:", bg=C_BG,
@@ -59,7 +83,7 @@ class BookingListFrame(tk.Frame):
         btn(toolbar, "Lọc", self.refresh,
             variant="ghost", icon="🔍").pack(side="left", padx=(8, 10))
         
-        # Action group separator
+        # Nhóm phân cách các hành động
         tk.Frame(toolbar, bg=C_BORDER, width=1, height=24).pack(side="left", padx=10)
 
         btn(toolbar, "Sửa lịch", self._edit_booking,
@@ -76,7 +100,7 @@ class BookingListFrame(tk.Frame):
                 lambda: self._set_status("Tu choi"),
                 variant="danger",  icon="✖").pack(side="left", padx=4)
 
-        # Right side exports
+        # Các nút xuất dữ liệu bên phải
         export_f = tk.Frame(toolbar, bg=C_BG)
         export_f.pack(side="right")
         btn(export_f, "Excel", self._export,
@@ -97,7 +121,7 @@ class BookingListFrame(tk.Frame):
         self.tree = make_tree(wrap, cols, hdrs, wids)
         with_scrollbar(wrap, self.tree)
 
-        # Sortable headers
+        # Tiêu đề có thể sắp xếp
         self._make_sortable(self.tree, list(cols))
 
         # Double-click to edit
@@ -136,6 +160,7 @@ class BookingListFrame(tk.Frame):
             current_user=self.current_user,
             status=self.status_var.get().strip(),
             from_today=False)
+        self._last_bookings = bookings
         all_rows = [
             (b.booking_id, b.user_name, b.room_id,
              b.booking_date, b.slot, b.purpose, b.status)
@@ -152,6 +177,27 @@ class BookingListFrame(tk.Frame):
 
         assert self.tree is not None
         fill_tree(self.tree, all_rows)
+        self._update_summary(all_rows)
+
+    def _update_summary(self, rows: list[tuple[object, ...]]) -> None:
+        if not hasattr(self, "_summary_labels"):
+            return
+        total = len(rows)
+        approved = sum(1 for r in rows if str(r[-1]) == "Da duyet")
+        pending = sum(1 for r in rows if str(r[-1]) == "Cho duyet")
+        rejected = sum(1 for r in rows if str(r[-1]) == "Tu choi")
+        rules = sum(1 for r in rows if str(r[0]).startswith("RULE-"))
+        values = {
+            "total": total,
+            "approved": approved,
+            "pending": pending,
+            "rejected": rejected,
+            "rules": rules,
+        }
+        for key, value in values.items():
+            label = self._summary_labels.get(key)
+            if label is not None:
+                label.config(text=str(value))
 
 
     def _selected_id(self) -> str | None:

@@ -47,17 +47,17 @@ class BookingFormFrame(tk.Frame):
         self._room_suggestion_limit = 6
         self._suppress_suggestion_limit_reset = False
 
-        # Recurring Booking State
+        # Trạng thái Đặt phòng lặp lại (Recurring)
         self.recurring_type = tk.StringVar(value="once") # once | weekly
         self.recur_days = {
-            0: tk.BooleanVar(value=False), # Mon
-            1: tk.BooleanVar(value=False), # Tue
-            2: tk.BooleanVar(value=False), # Wed
-            3: tk.BooleanVar(value=False), # Thu
-            4: tk.BooleanVar(value=False), # Fri
-            5: tk.BooleanVar(value=False), # Sat
+            0: tk.BooleanVar(value=False), # Thứ 2
+            1: tk.BooleanVar(value=False), # Thứ 3
+            2: tk.BooleanVar(value=False), # Thứ 4
+            3: tk.BooleanVar(value=False), # Thứ 5
+            4: tk.BooleanVar(value=False), # Thứ 6
+            5: tk.BooleanVar(value=False), # Thứ 7
         }
-        self.recur_end_type = tk.StringVar(value="date") # date | weeks
+        self.recur_end_type = tk.StringVar(value="date") # Theo ngày | Theo tuần
         self.recur_end_date = tk.StringVar(value=(dt.date.today() + dt.timedelta(weeks=4)).isoformat())
         self.recur_num_weeks = tk.StringVar(value="4")
 
@@ -100,7 +100,7 @@ class BookingFormFrame(tk.Frame):
 
         self.bind("<Configure>", self._on_frame_configure)
         
-        # Correctly bind mousewheel only when mouse is over the canvas
+        # Ràng buộc cuộn chuột chỉ khi chuột nằm trên canvas
         self._canvas.bind("<Enter>", lambda _: self._canvas.bind_all("<MouseWheel>", self._on_mousewheel))
         self._canvas.bind("<Leave>", lambda _: self._canvas.unbind_all("<MouseWheel>"))
 
@@ -108,7 +108,7 @@ class BookingFormFrame(tk.Frame):
         self._canvas.itemconfig(self._canvas_win, width=event.width)
 
     def _on_mousewheel(self, event: tk.Event) -> None:
-        # Only scroll if this frame is visible and exists
+        # Chỉ cuộn nếu khung hình này đang hiển thị và tồn tại
         try:
             if self.winfo_exists() and self.winfo_ismapped():
                 self._canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
@@ -116,7 +116,7 @@ class BookingFormFrame(tk.Frame):
             pass
 
     def _build_tabs(self) -> None:
-        """Create a tabbed interface for Form, History, and Calendar."""
+        """Tạo giao diện dạng tab cho Biểu mẫu, Lịch sử và Lịch biểu."""
         style = ttk.Style()
         style.configure("Titanium.TNotebook", background=C_BG)
         style.configure("Titanium.TNotebook.Tab", font=("Segoe UI", 9, "bold"), padding=[15, 5])
@@ -142,13 +142,14 @@ class BookingFormFrame(tk.Frame):
         )
         self.notebook.add(self.calendar_tab, text=" 📅 Lịch trống 30 ngày ")
 
-        # Refresh tabs on selection
+        # Làm mới các tab khi được chọn
         self.notebook.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def _on_tab_changed(self, event: Any = None) -> None:
         selected = self.notebook.select()
         if not selected: return
         tab = self.notebook.nametowidget(selected)
+        # Lấy widget từ id của tab
         if tab == getattr(self, "history_tab", None):
             self.history_tab.refresh()
         elif tab == getattr(self, "calendar_tab", None):
@@ -187,10 +188,9 @@ class BookingFormFrame(tk.Frame):
                  bg="#ffffff", fg=C_PRIMARY, font=("Segoe UI", 8, "bold")).pack()
 
         # Quick Wins: Deadline & Conflict warnings
-        self.warning_f = tk.Frame(container, bg=C_BG, height=58)
-        self.warning_f.pack_propagate(False)
+        self.warning_f = tk.Frame(container, bg=C_BG)
         self.warning_f.pack(fill="x", padx=20, pady=(0, 10))
-        self.warning_f.grid_remove() # Hidden by default
+        self.warning_f.pack_forget() # Hidden by default
 
         self._build_summary_bar(container)
 
@@ -1045,7 +1045,8 @@ class BookingFormFrame(tk.Frame):
                 f = tk.Frame(self.warning_f, bg="#eff6ff", highlightthickness=1, highlightbackground="#bfdbfe")
                 f.pack(fill="x", pady=2)
                 tk.Label(f, text="ℹ️ Lưu ý: Booking trong vòng 3 ngày có thể không được phê duyệt kịp!",
-                         bg="#eff6ff", fg="#1e40af", font=("Segoe UI", 9, "bold")).pack(padx=10, pady=5)
+                         bg="#eff6ff", fg="#1e40af", font=("Segoe UI", 9, "bold"),
+                         anchor="w", justify="left", wraplength=1200).pack(fill="x", padx=10, pady=5)
                 has_warning = True
 
                 
@@ -1056,7 +1057,8 @@ class BookingFormFrame(tk.Frame):
                     f = tk.Frame(self.warning_f, bg="#fef2f2", highlightthickness=1, highlightbackground="#fecaca")
                     f.pack(fill="x", pady=2)
                     tk.Label(f, text=f"🔴 Chú ý: Bạn đã có lịch vào ca này ({conflict.room_id} - {conflict.purpose[:30]}...)",
-                             bg="#fef2f2", fg="#dc2626", font=("Segoe UI", 9, "bold")).pack(padx=10, pady=5)
+                             bg="#fef2f2", fg="#dc2626", font=("Segoe UI", 9, "bold"),
+                             anchor="w", justify="left", wraplength=1200).pack(fill="x", padx=10, pady=5)
                     has_warning = True
         except Exception:
             pass

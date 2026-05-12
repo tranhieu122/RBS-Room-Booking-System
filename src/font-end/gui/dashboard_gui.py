@@ -1,4 +1,4 @@
-# dashboard_gui.py  –  Home / Dashboard Screen (v5.0 Titanium Ultra-Max Elite)
+# dashboard_gui.py  –  Màn hình chính / Dashboard (v5.0 Titanium Ultra-Max Elite)
 from __future__ import annotations
 import datetime as dt
 import tkinter as tk
@@ -25,14 +25,14 @@ C_CHART_BLUE      = "#3b82f6" # Blue 500
 
 class DashboardFrame(tk.Frame):
     """
-    Titanium Ultra-Max Elite Dashboard - Version 5.0
+    Titanium Ultra-Max Elite Dashboard - Phiên bản 5.0
     
-    A state-of-the-art, high-fidelity administrative interface featuring:
-    - Real-time animated canvas elements (Mesh gradients, Pulse effects)
-    - Dynamic data visualization widgets
-    - Interactive hover-glow card system
-    - Integrated multi-module activity tracking
-    - Modern glassmorphic design language
+    Giao diện quản trị hiện đại, độ phân giải cao với các tính năng:
+    - Các phần tử canvas hoạt họa thời gian thực (Mesh gradients, hiệu ứng Pulse)
+    - Các widget trực quan hóa dữ liệu động
+    - Hệ thống thẻ tương tác với hiệu ứng phát sáng khi di chuyển chuột
+    - Theo dõi hoạt động tích hợp đa mô-đun
+    - Ngôn ngữ thiết kế glassmorphic hiện đại
     """
     def __init__(self, master: tk.Misc, report_controller: Any,
                  booking_controller: Any,
@@ -43,24 +43,24 @@ class DashboardFrame(tk.Frame):
         self.booking_ctrl  = booking_controller
         self.current_user  = current_user
         
-        # State management for animations
+        # Quản lý trạng thái cho các hoạt ảnh
         self._anim_timer = None
         self._pulse_alpha = 0.5
         self._pulse_dir = 1
         self._mesh_points: List[Dict[str, Any]] = []
         self._img_cache: Dict[str, ImageTk.PhotoImage] = {}
         
-        # Path setup
+        # Thiết lập đường dẫn tài nguyên
         self.assets_dir = Path(__file__).resolve().parents[1] / "assets"
         
         self._setup_mesh_points()
         self._build()
         self._start_global_animations()
 
-    # ── Internal Helpers ──────────────────────────────────────────────────────
+    # ── Các hàm hỗ trợ nội bộ ───────────────────────────────────────────────────
 
     def _setup_mesh_points(self) -> None:
-        """Initialize random points for the background mesh animation."""
+        """Khởi tạo các điểm ngẫu nhiên cho hoạt ảnh lưới (mesh animation) nền."""
         for _ in range(15):
             self._mesh_points.append({
                 "x": random.random(),
@@ -88,32 +88,32 @@ class DashboardFrame(tk.Frame):
             return None
 
     def _start_global_animations(self) -> None:
-        """Central loop for handling all UI micro-animations."""
+        """Vòng lặp trung tâm xử lý tất cả các hoạt ảnh nhỏ trên giao diện."""
         if not self.winfo_exists(): return
         
-        # Pulse logic
+        # Logic hiệu ứng mạch đập (Pulse)
         self._pulse_alpha += 0.02 * self._pulse_dir
         if self._pulse_alpha >= 1.0: self._pulse_dir = -1
         if self._pulse_alpha <= 0.3: self._pulse_dir = 1
         
-        # Mesh point update
+        # Cập nhật các điểm lưới (Mesh point)
         for p in self._mesh_points:
             p["x"] += p["vx"]
             p["y"] += p["vy"]
             if p["x"] < 0 or p["x"] > 1: p["vx"] *= -1
             if p["y"] < 0 or p["y"] > 1: p["vy"] *= -1
             
-        # Specific canvas redraws if needed
+        # Vẽ lại canvas cụ thể nếu cần thiết
         if hasattr(self, "hero_cv") and self.hero_cv.winfo_exists():
             # Only redraw dynamic elements
             self._render_mesh_on_hero()
             
         self.after(50, self._start_global_animations)
 
-    # ── Core UI Building ──────────────────────────────────────────────────────
+    # ── Xây dựng Giao diện Chính ────────────────────────────────────────────────
 
     def _build(self) -> None:
-        # Main scrollable container
+        # Container chính có khả năng cuộn
         self._container = tk.Frame(self, bg=C_BG)
         self._container.pack(fill="both", expand=True)
 
@@ -126,7 +126,7 @@ class DashboardFrame(tk.Frame):
         self._body.bind("<Configure>", self._on_body_configure)
         self._canvas.bind("<Configure>", self._on_canvas_configure)
         
-        # Mousewheel support with smooth scrolling
+        # Hỗ trợ cuộn bằng con trỏ chuột mượt mà
         def _on_mousewheel(e):
             if self.winfo_exists():
                 self._canvas.yview_scroll(int(-1*(e.delta/120)), "units")
@@ -142,7 +142,7 @@ class DashboardFrame(tk.Frame):
         self._apply_mousewheel_binding(self._body)
 
     def _apply_mousewheel_binding(self, widget: tk.Widget) -> None:
-        """Recursively bind mouse wheel to all children to ensure scrolling works everywhere."""
+        """Gắn sự kiện cuộn chuột cho tất cả các widget con một cách đệ quy để đảm bảo hoạt động ở mọi nơi."""
         widget.bind("<MouseWheel>", lambda e: self._canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
         for child in widget.winfo_children():
             self._apply_mousewheel_binding(child)
@@ -158,13 +158,13 @@ class DashboardFrame(tk.Frame):
         body = self._body
         
         
-        # 2. Premium Hero Header (Vivid Canvas)
+        # 2. Header Hero Cao cấp (Sử dụng Canvas)
         self._draw_hero_header(body)
         
-        # 3. Statistics Grid (Large Metric Cards)
+        # 3. Lưới Thống kê (Các thẻ chỉ số lớn)
         self._draw_stat_cards(body)
         
-        # 4. Middle Section (Timeline & Quick Access)
+        # 4. Phần Giữa (Dòng thời gian & Truy cập nhanh)
         mid_layout = tk.Frame(body, bg=C_BG)
         mid_layout.pack(fill="x", padx=20, pady=(15, 15))
         mid_layout.columnconfigure(0, weight=2)
@@ -174,14 +174,14 @@ class DashboardFrame(tk.Frame):
         self._draw_activity_timeline(mid_layout)
         self._draw_side_panels(mid_layout)
         
-        # 5. Advanced Analytics Section (Data Viz)
+        # 5. Phần Phân tích Nâng cao (Trực quan hóa dữ liệu)
         self._draw_analytics_grid(body)
         
-        # 6. Detailed Performance Metrics
+        # 6. Các Chỉ số Hiệu suất Chi tiết
         self._draw_performance_insights(body)
         
 
-    # ── Section Implementations ──────────────────────────────────────────────
+    # ── Triển khai các Phân đoạn Giao diện ───────────────────────────────────────
 
 
 
@@ -192,7 +192,7 @@ class DashboardFrame(tk.Frame):
         self.hero_cv = tk.Canvas(card, height=240, bg=C_HERO_GRAD_START, highlightthickness=0)
         self.hero_cv.pack(fill="both", expand=True)
         
-        # Content Overlays (static text handled once per redraw)
+        # Lớp phủ nội dung (Văn bản tĩnh được xử lý một lần mỗi lần vẽ lại)
         self._hero_text_items = []
 
         def _render_hero_base(e=None):

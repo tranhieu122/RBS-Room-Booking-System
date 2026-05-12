@@ -1,4 +1,4 @@
-# room_feedback_gui.py – dialogs and admin page for room ratings & issue reports
+# room_feedback_gui.py – Hộp thoại và trang quản trị cho đánh giá phòng & báo cáo sự cố
 from __future__ import annotations
 import sqlite3
 import tkinter as tk
@@ -43,7 +43,7 @@ class RoomRatingDialog(tk.Toplevel):
         self.geometry(f"+{pw - w//2}+{ph - h//2}")
 
     def _build(self, room_name: str) -> None:
-        # Header - Titanium Dark Style
+        # Tiêu đề - Phong cách Titanium Dark
         hdr = tk.Frame(self, bg=C_DARK, padx=24, pady=24)
         hdr.pack(fill="x")
         tk.Frame(hdr, bg=C_PRIMARY, height=3).pack(fill="x", side="top", pady=(0, 15))
@@ -59,14 +59,14 @@ class RoomRatingDialog(tk.Toplevel):
         tk.Label(txt_f, text=room_name.upper(), bg=C_DARK, fg="white",
                  font=("Segoe UI", 16, "bold")).pack(anchor="w")
 
-        # Body
+        # Thân hộp thoại
         body = tk.Frame(self, bg=C_SURFACE, padx=24, pady=24)
         body.pack(fill="both", expand=True)
 
         tk.Label(body, text="Mức độ hài lòng của bạn:", bg=C_SURFACE,
                  fg=C_DARK, font=F_BODY_B).pack(anchor="w")
 
-        # ── star buttons ──────────────────────────────────────────────────────
+        # ── Các nút chọn sao ───────────────────────────────────────────────────
         star_row = tk.Frame(body, bg=C_SURFACE)
         star_row.pack(pady=(10, 5), anchor="w")
         self._star_btns: list[tk.Label] = []
@@ -83,18 +83,18 @@ class RoomRatingDialog(tk.Toplevel):
                                       fg=C_PRIMARY, font=("Segoe UI", 10, "bold"))
         self._rating_label.pack(pady=(0, 20), anchor="w")
 
-        # ── comment ───────────────────────────────────────────────────────────
+        # ── Phần nhận xét ─────────────────────────────────────────────────────
         tk.Label(body, text="Nhận xét chi tiết:", bg=C_SURFACE,
                  fg=C_DARK, font=F_BODY_B).pack(anchor="w")
         
-        # Styled Text Container
+        # Khung chứa văn bản có kiểu dáng riêng
         txt_border = tk.Frame(body, bg=C_BORDER, padx=1, pady=1)
         txt_border.pack(fill="x", pady=(8, 20))
         self._comment = tk.Text(txt_border, width=42, height=4, font=F_INPUT,
                                 bg="white", relief="flat", padx=10, pady=8, wrap="word")
         self._comment.pack(fill="x")
 
-        # ── existing rating hint ──────────────────────────────────────────────
+        # ── Gợi ý đánh giá hiện có ─────────────────────────────────────────────
         existing = self.feedback_ctrl.get_user_rating(
             self.room_id, self.current_user.user_id)
         if existing:
