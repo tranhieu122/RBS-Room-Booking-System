@@ -1,11 +1,11 @@
 <div align="center">
-  <h1>🏫 Hệ Thống Quản Lý Đặt Phòng Học</h1>
-  <p><strong>(Classroom Booking Management System)</strong></p>
-  <p><i>Bài tập lớn môn Phát triển ứng dụng Desktop — Nhóm 24</i></p>
+  <h1>💎 RBS — Titanium Elite Edition</h1>
+  <p><strong>Hệ Thống Quản Lý Đặt Phòng Học Cao Cấp</strong></p>
+  <p><i>Phát triển bởi Nhóm 24 — High-Fidelity Desktop Application</i></p>
 
   <p>
     <img src="https://img.shields.io/badge/Python-3.10+-blue.svg?logo=python&logoColor=white" alt="Python">
-    <img src="https://img.shields.io/badge/Tkinter-GUI-orange.svg" alt="Tkinter">
+    <img src="https://img.shields.io/badge/UI--UX-Titanium_Elite-6366f1.svg" alt="Titanium Elite">
     <img src="https://img.shields.io/badge/SQLite-Database-lightgrey.svg?logo=sqlite&logoColor=white" alt="SQLite">
     <img src="https://img.shields.io/badge/Architecture-MVC-brightgreen.svg" alt="MVC Architecture">
   </p>
@@ -15,164 +15,86 @@
 
 ## 📝 Giới thiệu
 
-Hệ thống **Quản lý đặt phòng học** là một ứng dụng desktop mạnh mẽ được xây dựng bằng **Python** và **Tkinter**, tuân thủ nghiêm ngặt kiến trúc **MVC (Model – View – Controller)**. 
+**RBS (Room Booking System) — Titanium Elite** là phiên bản nâng cấp toàn diện của hệ thống quản lý phòng học, tập trung vào trải nghiệm người dùng cao cấp (UX) và giao diện hiện đại (UI). Ứng dụng được xây dựng trên nền tảng **Python & Tkinter** nhưng được tối ưu hóa với các kỹ thuật đồ họa Canvas nâng cao, mang lại cảm giác mượt mà như một ứng dụng web hiện đại.
 
-Dự án cung cấp giải pháp chuyển đổi số toàn diện cho quy trình quản lý, theo dõi và đặt phòng học trong môi trường giáo dục (Đại học/Cao đẳng). Hệ thống giúp tối ưu hóa việc sử dụng cơ sở vật chất, tự động hóa quy trình phê duyệt, và nâng cao trải nghiệm của Giảng viên cũng như Sinh viên.
-
----
-
-## ✨ Tính năng nổi bật
-
-Ứng dụng phân quyền mạnh mẽ với 3 vai trò chính:
-
-### 🛠️ Quản trị viên (Admin)
-- **Quản lý toàn diện:** Thêm, sửa, xóa, và phân quyền người dùng.
-- **Quản lý cơ sở vật chất:** Quản lý thông tin phòng học, sức chứa, thiết bị, và trạng thái bảo trì.
-- **Xử lý yêu cầu:** Phê duyệt hoặc từ chối yêu cầu đặt phòng với hệ thống thông báo Email tự động.
-- **Thống kê & Báo cáo:** Cung cấp Dashboard trực quan, hỗ trợ xuất báo cáo ra **Excel** và **PDF**.
-- **Quản lý phản hồi:** Theo dõi đánh giá và xử lý các sự cố được báo cáo từ người dùng.
-
-### 👨‍🏫 Giảng viên
-- **Đặt phòng nhanh chóng:** Tìm kiếm phòng trống và đặt phòng theo lịch trình.
-- **Theo dõi lịch biểu:** Xem lịch sử dụng phòng trực quan theo tuần.
-- **Tương tác:** Đánh giá chất lượng phòng học (1-5 sao) và báo cáo sự cố hư hỏng thiết bị.
-
-### 🎓 Sinh viên
-- **Yêu cầu mượn phòng:** Gửi yêu cầu sử dụng phòng phục vụ học tập/hoạt động ngoại khóa (cần Admin phê duyệt).
-- **Quản lý cá nhân:** Xem lịch sử đặt phòng của bản thân.
-- **Tương tác:** Tham gia đánh giá và báo lỗi cơ sở vật chất.
+Hệ thống giải quyết triệt để bài toán quản lý tài nguyên phòng học, từ việc đặt chỗ đơn lẻ cho sinh viên đến việc quản lý lịch dạy chu kỳ (recurring schedule) phức tạp cho giảng viên.
 
 ---
 
-## 🛠️ Công nghệ & Thư viện
+## ✨ Tính năng "Titanium Elite"
+
+Hệ thống vượt xa các ứng dụng quản lý thông thường với bộ tính năng chuyên sâu:
+
+### 🚀 Giao diện Titanium Elite
+- **Dashboard Executive:** Tổng quan dữ liệu trực quan với các biểu đồ Canvas động, hiệu ứng mesh animation và thống kê thời gian thực.
+- **Smart Calendar:** Lịch biểu thông minh hỗ trợ xem theo tuần, theo phòng và xem trước 30 ngày với mã màu phân loại trạng thái.
+- **Micro-interactions:** Hiệu ứng hover, transition mượt mà và hệ thống thông báo Toast cao cấp.
+
+### 📅 Quản lý Đặt phòng Thông minh
+- **Lịch dạy Chu kỳ (Recurring):** Hỗ trợ giảng viên thiết lập lịch lặp lại (ví dụ: thứ 2, thứ 4 hàng tuần) trong cả học kỳ chỉ với một thao tác.
+- **Xử lý xung đột:** Thuật toán phát hiện trùng lịch thông minh, gợi ý các phòng thay thế dựa trên sức chứa và thiết bị.
+- **Phê duyệt đa luồng:** Admin có thể duyệt nhanh hàng loạt yêu cầu, từ chối kèm lý do và tự động gửi thông báo.
+
+### 📊 Thống kê & Xuất bản
+- **Báo cáo chuyên sâu:** Thống kê tần suất sử dụng phòng, tỷ lệ phê duyệt và xu hướng đặt phòng theo tháng.
+- **Đa dạng định dạng:** Xuất dữ liệu ra **Excel**, **CSV** và đặc biệt là tệp **iCalendar (.ics)** để đồng bộ với Google Calendar/Outlook.
+
+---
+
+## 🛠️ Công nghệ & Kiến trúc
 
 | Thành phần | Công nghệ / Thư viện | Ghi chú |
 | :--- | :--- | :--- |
-| **Ngôn ngữ** | `Python 3.10+` | |
-| **Giao diện (GUI)**| `Tkinter`, `ttk` | Hệ thống helper UI nâng cao, custom theme |
-| **Cơ sở dữ liệu** | `SQLite` | Tự động khởi tạo (`classroom_booking.db`), không cần setup server |
-| **Bảo mật** | `hashlib` | PBKDF2-HMAC-SHA256 (100,000 iterations) với Random Salt |
-| **Email** | `smtplib` | Gửi email thông báo tự động qua SMTP (Gmail) |
-| **Xuất báo cáo** | `openpyxl`, `fpdf2` | Hỗ trợ xuất dữ liệu ra Excel và PDF |
-| **Lịch (Calendar)**| `tkcalendar` | UI chọn ngày tháng trực quan |
-| **Kiểm thử (Test)**| `pytest` | Bộ 75+ test cases đảm bảo độ ổn định |
-| **Logging** | `logging` | Ghi log hệ thống xoay vòng (Rotating File Handler) |
+| **Giao diện** | `Tkinter` + `Canvas API` | Thiết kế theo hệ thống Titanium Design System |
+| **Logic** | `Python 3.10+` | Kiến trúc MVC tách biệt hoàn toàn Logic và View |
+| **Dữ liệu** | `SQLite 3` | Hiệu suất cao với WAL mode và Parameterized Queries |
+| **Tiện ích** | `tkcalendar`, `openpyxl` | Hỗ trợ chọn ngày và xuất bản dữ liệu chuyên nghiệp |
+| **Lịch biểu** | `iCalendar` | Hỗ trợ chuẩn .ics quốc tế |
 
 ---
 
-## 🏗️ Kiến trúc hệ thống
-
-Dự án áp dụng mô hình **MVC** kết hợp **DAO (Data Access Object)** giúp tách biệt logic, giao diện và dữ liệu:
-
-```mermaid
-graph TD
-    GUI[GUI / View\n(Tkinter)] <-->|Tương tác| CTRL[Controller\n(Xử lý Logic)]
-    CTRL <-->|Gọi hàm| DAO[DAO\n(Thao tác CSDL)]
-    DAO <-->|Truy vấn| DB[(SQLite Database)]
-    DAO -->|Tạo đối tượng| MODEL[Model\n(Dataclasses)]
-    CTRL -.->|Sử dụng| MODEL
-```
-
-> **Chi tiết thiết kế:** Xem thêm tài liệu giải thích UML và ERD tại `Docs/readme9.md` và thư mục `Docs/Design/`.
-
----
-
-## 📂 Cấu trúc thư mục
+## 📂 Cấu trúc dự án
 
 ```text
-BTL-nhom24/
-├── main.py                  # Điểm khởi chạy ứng dụng (Root launcher)
-├── requirements.txt         # Danh sách thư viện phụ thuộc
-├── setup.bat                # Script cài đặt nhanh (Windows)
+RBS-Titanium/
+├── main.py                  # Entry point (Khởi chạy ứng dụng)
 ├── src/
-│   ├── back end/            # Xử lý Logic & Database
-│   │   ├── controllers/     # Controller (Auth, Booking, Room, User...)
-│   │   ├── dao/             # Thao tác CSDL (RoomDAO, UserDAO...)
-│   │   ├── database/        # Schema SQL & Dữ liệu mẫu (Seed data)
-│   │   ├── models/          # Các thực thể dữ liệu (User, Room, Booking...)
-│   │   ├── utils/           # Tiện ích (Hash, Email, Export, Logger)
-│   │   └── main.py          # Entry point của Tkinter
+│   ├── back end/            # Core Engine & Business Logic
+│   │   ├── controllers/     # Điều phối dữ liệu (Booking, Room, Report...)
+│   │   ├── dao/             # Data Access Objects (Truy vấn SQLite)
+│   │   ├── database/        # Cấu trúc CSDL & Seed data
+│   │   └── utils/           # Export ICS/Excel, Hash mật khẩu, Logger
 │   └── font-end/
-│       └── gui/             # Các màn hình Giao diện Tkinter
-├── tests/                   # Thư mục chứa các Unit tests (Pytest)
-└── Docs/                    # Tài liệu đặc tả, thiết kế, UML, ERD
+│       └── gui/             # Titanium Elite UI Components
+│           ├── theme.py     # Hệ thống Design Tokens (Màu sắc, Font, Button)
+│           ├── dashboard_gui.py # Executive Dashboard
+│           └── booking_form_gui.py # Smart Booking Interface
+└── tests/                   # Kiểm thử hệ thống (Pytest)
 ```
 
 ---
 
-## 🚀 Hướng dẫn cài đặt & Sử dụng
+## 🚀 Cài đặt nhanh
 
-### 1. Chuẩn bị mã nguồn
+1. **Yêu cầu:** Máy tính đã cài đặt Python 3.10 trở lên.
+2. **Cài đặt thư viện:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. **Khởi chạy:**
+   ```bash
+   python main.py
+   ```
 
-```bash
-git clone https://github.com/tranhieu122/BTL-nhom24.git
-cd BTL-nhom24
-```
+---
 
-### 2. Thiết lập môi trường
+## 🔐 Tài khoản dùng thử
 
-Khuyến nghị sử dụng **Virtual Environment (venv)**:
-
-```bash
-# Tạo môi trường ảo
-python -m venv .venv
-
-# Kích hoạt (Windows)
-.venv\Scripts\activate
-# Kích hoạt (Linux/macOS)
-source .venv/bin/activate
-
-# Cài đặt thư viện
-pip install -r requirements.txt
-```
-
-*(Lưu ý đối với người dùng Windows: Bạn có thể chạy trực tiếp file `setup.bat` để tự động hóa bước cài đặt).*
-
-### 3. Cấu hình tính năng Email (Tùy chọn)
-
-Để ứng dụng có thể gửi Email tự động khi duyệt/từ chối phòng, tạo file `.env` ở thư mục gốc:
-
-```env
-EMAIL_ENABLED=true
-SMTP_USER=your_email@gmail.com
-SMTP_PASSWORD=your_app_password
-```
-*(Cần sử dụng App Password của Gmail, không dùng mật khẩu gốc).*
-
-### 4. Khởi chạy ứng dụng
-
-```bash
-python main.py
-```
-
-> 💡 **Tip:** Ở lần chạy đầu tiên, ứng dụng sẽ tự động tạo cơ sở dữ liệu `classroom_booking.db` và nạp sẵn (seed) các dữ liệu mẫu để bạn trải nghiệm ngay.
-
-### 5. Tài khoản dùng thử
-
-Sử dụng các tài khoản sau để đăng nhập vào các phân hệ tương ứng:
-
-| Vai trò | Tên đăng nhập | Mật khẩu |
+| Vai trò | Tài khoản | Mật khẩu |
 | :--- | :--- | :--- |
-| **Quản trị viên (Admin)** | `admin` | `admin123` |
-| **Giảng viên** | `gv01` | `gv123` |
-| **Sinh viên** | `sv01` | `sv123` |
-
-### 6. Chạy Kiểm thử (Unit Tests)
-
-Để chạy bộ kiểm thử hệ thống:
-
-```bash
-python -m pytest tests/ -v
-```
-
----
-
-## 🔒 Tính năng Bảo mật
-
-- **Mã hóa Mật khẩu:** Sử dụng thuật toán `PBKDF2-HMAC-SHA256` với Salt ngẫu nhiên 16 byte và 100,000 vòng lặp (iterations). Hỗ trợ nâng cấp tự động từ hash chuẩn SHA-256 cũ.
-- **Phòng chống SQL Injection:** Toàn bộ truy vấn CSDL đều sử dụng Parameterized Queries (`?`).
-- **Phân quyền truy cập:** Ràng buộc chặt chẽ các chức năng theo 3 cấp độ tài khoản.
-- **Audit Logging:** Ghi nhận mọi hoạt động quan trọng vào file `logs/app.log` (Hỗ trợ xoay vòng file log tối đa 2MB, lưu 3 bản backup).
+| **Admin** | `admin` | `admin123` |
+| **Giảng viên** | `teacher1` | `teacher123` |
+| **Sinh viên** | `student1` | `student123` |
 
 ---
 
@@ -180,9 +102,11 @@ python -m pytest tests/ -v
 
 | STT | Họ và Tên | Vai trò |
 |:---:|:---|:---|
-| 1 | **Trần Trung Hiếu** | Trưởng nhóm / Full-stack |
-| 2 | **Nguyễn Huy Hải** | Thành viên |
-| 3 | **Nguyễn Tuấn Minh** | Thành viên |
+| 1 | **Trần Trung Hiếu** | Trưởng nhóm / Full-stack Developer |
+| 2 | **Nguyễn Huy Hải** | UI Design / Testing |
+| 3 | **Nguyễn Tuấn Minh** | Backend Logic / Data Architecture |
 
 ---
-*Dự án được phát triển với niềm đam mê ❤️ và sự nghiêm túc.*
+<div align="center">
+  <p><i>Dự án được hoàn thiện với tiêu chuẩn Titanium Elite — Sang trọng, Mạnh mẽ và Tin cậy.</i></p>
+</div>
