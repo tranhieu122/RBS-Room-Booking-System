@@ -105,6 +105,7 @@ class DashboardFrame(tk.Frame):
             
         # Specific canvas redraws if needed
         if hasattr(self, "hero_cv") and self.hero_cv.winfo_exists():
+            # Only redraw dynamic elements
             self._render_mesh_on_hero()
             
         self.after(50, self._start_global_animations)
@@ -138,6 +139,14 @@ class DashboardFrame(tk.Frame):
         self._vsb.pack(side="right", fill="y")
         
         self._draw_content()
+        self._apply_mousewheel_binding(self._body)
+
+    def _apply_mousewheel_binding(self, widget: tk.Widget) -> None:
+        """Recursively bind mouse wheel to all children to ensure scrolling works everywhere."""
+        widget.bind("<MouseWheel>", lambda e: self._canvas.yview_scroll(int(-1*(e.delta/120)), "units"))
+        for child in widget.winfo_children():
+            self._apply_mousewheel_binding(child)
+
 
     def _on_body_configure(self, event: tk.Event) -> None:
         self._canvas.configure(scrollregion=self._canvas.bbox("all"))
@@ -148,8 +157,6 @@ class DashboardFrame(tk.Frame):
     def _draw_content(self) -> None:
         body = self._body
         
-        # 1. Dashboard Global Header (Search & Meta)
-        self._draw_global_toolbar(body)
         
         # 2. Premium Hero Header (Vivid Canvas)
         self._draw_hero_header(body)
@@ -173,51 +180,10 @@ class DashboardFrame(tk.Frame):
         # 6. Detailed Performance Metrics
         self._draw_performance_insights(body)
         
-        # 7. System Health Pulse (Subtle bar)
-        self._draw_system_pulse_bar(body)
-        
-        # 8. Footer (Metadata)
-        self._draw_footer(body)
 
     # ── Section Implementations ──────────────────────────────────────────────
 
-    def _draw_global_toolbar(self, body: tk.Frame) -> None:
-        bar = tk.Frame(body, bg=C_BG, pady=10)
-        bar.pack(fill="x", padx=25)
-        
-        # Left side: Search Box
-        from gui.theme import search_box
-        s_var = tk.StringVar()
-        search_f = search_box(bar, s_var, placeholder="Tìm nhanh (Phòng, Người dùng, Mã đặt...)", width=45)
-        search_f.pack(side="left")
-        
-        # Right side: Live Clock & Status
-        meta_f = tk.Frame(bar, bg=C_BG)
-        meta_f.pack(side="right")
-        
-        self.clock_lbl = tk.Label(meta_f, text="--:--", font=("Segoe UI", 11, "bold"), fg=C_DARK, bg=C_BG)
-        self.clock_lbl.pack(side="right", padx=(15, 0))
-        
-        def _tick():
-            if not self.winfo_exists(): return
-            now = dt.datetime.now().strftime("%H:%M:%S • %d/%m/%Y")
-            self.clock_lbl.config(text=now)
-            self.after(1000, _tick)
-        _tick()
-        
-        status_dot = tk.Canvas(meta_f, width=12, height=12, bg=C_BG, highlightthickness=0)
-        status_dot.pack(side="right", padx=8)
-        
-        def _anim_dot():
-            if not self.winfo_exists(): return
-            status_dot.delete("all")
-            color = "#10b981" # Online
-            alpha = int(self._pulse_alpha * 255)
-            # Simulating pulse with circle size
-            r = 3 + (self._pulse_alpha * 3)
-            status_dot.create_oval(6-r, 6-r, 6+r, 6+r, fill=color, outline="")
-            self.after(100, _anim_dot)
-        _anim_dot()
+
 
     def _draw_hero_header(self, body: tk.Frame) -> None:
         outer, card = make_card(body, padx=0, pady=0, shadow=True)
@@ -238,53 +204,53 @@ class DashboardFrame(tk.Frame):
 
     def _render_mesh_on_hero(self) -> None:
         w, h = self.hero_cv.winfo_width(), self.hero_cv.winfo_height()
-        self.hero_cv.delete("mesh") # Delete only mesh tags
-        self.hero_cv.delete("static")
+        if w < 10: return
         
-        # 1. Background Gradient
-        steps = 40
-        for i in range(steps):
-            ratio = i / steps
-            r = int(0x4f + ratio * (0x7c - 0x4f))
-            g = int(0x46 + ratio * (0x3a - 0x46))
-            b = int(0xe5 + ratio * (0xed - 0xe5))
-            color = f"#{r:02x}{g:02x}{b:02x}"
-            self.hero_cv.create_rectangle(i*(w/steps), 0, (i+1)*(w/steps)+1, h, fill=color, outline="", tags="mesh")
+        # 1. Ensure static elements (background + text) exist
+        if not self.hero_cv.find_withtag("static"):
+            # Background Gradient
+            steps = 40
+            for i in range(steps):
+                ratio = i / steps
+                r = int(0x4f + ratio * (0x7c - 0x4f))
+                g = int(0x46 + ratio * (0x3a - 0x46))
+                b = int(0xe5 + ratio * (0xed - 0xe5))
+                color = f"#{r:02x}{g:02x}{b:02x}"
+                self.hero_cv.create_rectangle(i*(w/steps), 0, (i+1)*(w/steps)+1, h, fill=color, outline="", tags="static")
+            
+            # Text Content
+            greeting = "Chào buổi sáng"
+            now = dt.datetime.now()
+            if now.hour >= 12: greeting = "Chào buổi chiều"
+            if now.hour >= 18: greeting = "Chào buổi tối"
+            u_name = self.current_user.full_name if self.current_user else "Administrator"
+            
+            self.hero_cv.create_text(60, 80, text=f"{greeting},", font=("Segoe UI", 22), fill="#c7d2fe", anchor="w", tags="static")
+            self.hero_cv.create_text(60, 125, text=f"{u_name}", font=("Segoe UI", 48, "bold"), fill="white", anchor="w", tags="static")
+            self.hero_cv.create_text(60, 180, text="Hiệu suất hệ thống hiện tại đang ở mức tối ưu (99.8%).", 
+                                    font=("Segoe UI", 12), fill="#e0e7ff", anchor="w", tags="static")
 
-        # 2. Animated Mesh Nodes
+        # 2. Redraw dynamic mesh (nodes + lines)
+        self.hero_cv.delete("mesh")
+        
+        # Nodes
         for p in self._mesh_points:
             px, py = p["x"] * w, p["y"] * h
             self.hero_cv.create_oval(px-p["r"], py-p["r"], px+p["r"], py+p["r"], 
-                                     fill="white", stipple="gray25", outline="", tags="mesh")
+                                     fill="white", outline="", tags="mesh")
             
-        # 3. Connection Lines
+        # Connection Lines
         for i, p1 in enumerate(self._mesh_points):
             for p2 in self._mesh_points[i+1:i+4]:
                 dist = math.hypot(p1["x"]-p2["x"], p1["y"]-p2["y"])
                 if dist < 0.2:
                     self.hero_cv.create_line(p1["x"]*w, p1["y"]*h, p2["x"]*w, p2["y"]*h, 
-                                             fill="white", width=1, stipple="gray12", tags="mesh")
+                                             fill="#cbd5e1", width=1, tags="mesh")
+        
+        # 3. Bring text to top
+        self.hero_cv.tag_raise("static")
 
-        # 4. Content Overlay
-        self.hero_cv.create_rectangle(0, 0, w, h, fill="black", stipple="gray25", outline="", tags="static")
-        
-        now = dt.datetime.now()
-        greeting = "Chào buổi sáng" if now.hour < 12 else "Chào buổi chiều" if now.hour < 18 else "Chào buổi tối"
-        u_name = self.current_user.full_name if self.current_user else "Administrator"
-        
-        self.hero_cv.create_text(60, 80, text=f"{greeting},", font=("Segoe UI", 22), fill="#c7d2fe", anchor="w", tags="static")
-        self.hero_cv.create_text(60, 125, text=f"{u_name} 👋", font=("Segoe UI", 48, "bold"), fill="white", anchor="w", tags="static")
-        self.hero_cv.create_text(60, 180, text="Hiệu suất hệ thống hiện tại đang ở mức tối ưu (99.8%).", 
-                                font=("Segoe UI", 12), fill="#e0e7ff", anchor="w", tags="static")
-
-        # Re-draw Action Button
-        btn_w, btn_h, m = 190, 44, 30
-        bx1, by1 = w - m, h - m
-        bx0, by0 = bx1 - btn_w, by1 - btn_h
-        self.hero_cv.create_rectangle(bx0, by0, bx1, by1, fill="white", outline="white", width=1, stipple="gray25", tags=("static", "btn_report"))
-        self.hero_cv.create_text((bx0+bx1)/2, (by0+by1)/2, text="Xem báo cáo chi tiết  →", font=("Segoe UI", 10, "bold"), fill="white", tags=("static", "btn_report"))
-        
-        # Re-bind is tricky on re-render, so we do it in _draw_hero_header once but here we ensure tags match
+        # Action button removed as requested
 
     def _draw_stat_cards(self, body: tk.Frame) -> None:
         grid = tk.Frame(body, bg=C_BG)
@@ -303,7 +269,7 @@ class DashboardFrame(tk.Frame):
         ]
         
         for i, (label, val, icon, color, trend) in enumerate(stats):
-            outer, card = make_card(grid, padx=24, pady=22, shadow=True)
+            outer, card = make_card(grid, padx=24, pady=22, shadow=True, bg=C_SURFACE)
             outer.grid(row=0, column=i, sticky="nsew", padx=8, pady=10)
             
             badge = tk.Frame(card, bg="#f1f5f9", width=52, height=52)
@@ -330,7 +296,10 @@ class DashboardFrame(tk.Frame):
             card.bind("<Enter>", _in); card.bind("<Leave>", _out)
 
     def _draw_activity_timeline(self, parent: tk.Frame) -> None:
-        outer, card = make_card(parent, padx=28, pady=25, shadow=True)
+        # Fixed: list_bookings call with correct keyword arguments
+        bookings = self.booking_ctrl.list_bookings(current_user=self.current_user, from_today=False)
+        
+        outer, card = make_card(parent, padx=28, pady=25, shadow=True, bg=C_SURFACE)
         outer.grid(row=0, column=0, sticky="nsew", padx=(0, 18))
         
         hdr = tk.Frame(card, bg=C_SURFACE)
@@ -343,7 +312,6 @@ class DashboardFrame(tk.Frame):
         for t in ["Tất cả", "Đặt phòng", "Sự cố"]:
             btn(filter_f, t, lambda t=t: toast(self, f"Đang lọc: {t}"), variant="ghost", font=("Segoe UI", 8, "bold")).pack(side="left", padx=2)
 
-        bookings = self.booking_ctrl.list_bookings(from_today=False)
         if not bookings:
             tk.Label(card, text="Trống.", font=("Segoe UI", 10, "italic"), fg=C_MUTED, bg=C_SURFACE).pack(pady=30)
             return
@@ -355,8 +323,10 @@ class DashboardFrame(tk.Frame):
         win_id = canvas_scroll.create_window((0, 0), window=inner_timeline, anchor="nw")
         inner_timeline.bind("<Configure>", lambda _: canvas_scroll.configure(scrollregion=canvas_scroll.bbox("all")))
         canvas_scroll.bind("<Configure>", lambda e: canvas_scroll.itemconfig(win_id, width=e.width))
+        canvas_scroll.configure(yscrollcommand=scroll_v.set)
         
         canvas_scroll.pack(side="left", fill="both", expand=True)
+        scroll_v.pack(side="right", fill="y")
         
         for i, b in enumerate(bookings[:10]):
             row = tk.Frame(inner_timeline, bg=C_SURFACE, pady=12)
@@ -372,25 +342,27 @@ class DashboardFrame(tk.Frame):
             line_f.create_oval(14, 24, 26, 36, fill=dot_c, outline="white", width=2)
             
             # Detailed Box
-            box = tk.Frame(row, bg="#f8fafc", padx=20, pady=12, highlightthickness=1, highlightbackground=C_BORDER)
+            row_bg = "#ffffff"
+            box = tk.Frame(row, bg=row_bg, padx=20, pady=12, highlightthickness=1, highlightbackground=C_BORDER)
             box.pack(side="left", fill="x", expand=True)
             
-            tk.Label(box, text=f"📍 {b.room_id}", font=("Segoe UI", 11, "bold"), fg=C_DARK, bg="#f8fafc").pack(anchor="w")
-            tk.Label(box, text=f"{b.user_name} đã thực hiện yêu cầu đặt phòng.", font=("Segoe UI", 9), fg=C_TEXT, bg="#f8fafc").pack(anchor="w")
+            tk.Label(box, text=f"📍 {b.room_id}", font=("Segoe UI", 11, "bold"), fg=C_DARK, bg=row_bg).pack(anchor="w")
+            tk.Label(box, text=f"{b.user_name} đã thực hiện yêu cầu đặt phòng.", font=("Segoe UI", 9), fg=C_TEXT, bg=row_bg).pack(anchor="w")
             
-            meta = tk.Frame(box, bg="#f8fafc")
+            meta = tk.Frame(box, bg=row_bg)
             meta.pack(fill="x", pady=(5, 0))
-            tk.Label(meta, text=f"🕒 Ca {b.slot} • {b.booking_date}", font=("Segoe UI", 8), fg=C_MUTED, bg="#f8fafc").pack(side="left")
+            tk.Label(meta, text=f"🕒 Ca {b.slot} • {b.booking_date}", font=("Segoe UI", 8), fg=C_MUTED, bg=row_bg).pack(side="left")
             
             st_map = {"Da duyet": "Hoàn tất", "Cho duyet": "Đang xử lý", "Tu choi": "Từ chối"}
-            tk.Label(meta, text=st_map.get(b.status, b.status), font=("Segoe UI", 8, "bold"), fg=dot_c, bg="#f8fafc").pack(side="right")
+            tk.Label(meta, text=st_map.get(b.status, b.status), font=("Segoe UI", 8, "bold"), fg=dot_c, bg=row_bg).pack(side="right")
 
     def _draw_side_panels(self, parent: tk.Frame) -> None:
         side = tk.Frame(parent, bg=C_BG)
         side.grid(row=0, column=1, sticky="nsew")
         
+        card_bg = "#ffffff"
         # 1. Management Hub
-        h_outer, h_card = make_card(side, padx=25, pady=25, shadow=True)
+        h_outer, h_card = make_card(side, padx=25, pady=25, shadow=True, bg=C_SURFACE)
         h_outer.pack(fill="both", expand=True, pady=(0, 15))
         
         tk.Label(h_card, text="DANH MỤC QUẢN TRỊ", font=("Segoe UI", 10, "bold"), fg=C_PRIMARY, bg=C_SURFACE).pack(anchor="w", pady=(0, 20))
@@ -409,16 +381,17 @@ class DashboardFrame(tk.Frame):
         ]
         
         for i, (name, icon, key, col) in enumerate(items):
-            tile = tk.Frame(grid, bg="#f8fafc", cursor="hand2", padx=5, pady=18, highlightthickness=1, highlightbackground=C_BORDER)
+            tile_bg = "#ffffff"
+            tile = tk.Frame(grid, bg=tile_bg, cursor="hand2", padx=5, pady=18, highlightthickness=1, highlightbackground=C_BORDER)
             tile.grid(row=i//2, column=i%2, sticky="nsew", padx=6, pady=6)
             
-            tk.Label(tile, text=icon, font=("Segoe UI", 22), fg=col, bg="#f8fafc").pack()
-            tk.Label(tile, text=name, font=("Segoe UI", 10, "bold"), fg=C_DARK, bg="#f8fafc").pack(pady=(5, 0))
+            tk.Label(tile, text=icon, font=("Segoe UI", 22), fg=col, bg=tile_bg).pack()
+            tk.Label(tile, text=name, font=("Segoe UI", 10, "bold"), fg=C_DARK, bg=tile_bg).pack(pady=(5, 0))
             
             def _nav(k=key): self._nav_to(k)
             tile.bind("<Button-1>", lambda _, k=key: _nav(k))
             tile.bind("<Enter>", lambda e, t=tile, c=col: t.config(bg="#eff6ff", highlightbackground=c))
-            tile.bind("<Leave>", lambda e, t=tile: t.config(bg="#f8fafc", highlightbackground=C_BORDER))
+            tile.bind("<Leave>", lambda e, t=tile: t.config(bg=tile_bg, highlightbackground=C_BORDER))
             for c in tile.winfo_children(): c.bind("<Button-1>", lambda _, k=key: _nav(k))
 
     def _draw_analytics_grid(self, body: tk.Frame) -> None:
@@ -429,7 +402,7 @@ class DashboardFrame(tk.Frame):
         grid.rowconfigure(0, weight=1)
         
         # A: Bar Chart
-        a_outer, a_card = make_card(grid, padx=25, pady=25, shadow=True)
+        a_outer, a_card = make_card(grid, padx=25, pady=25, shadow=True, bg=C_SURFACE)
         a_outer.grid(row=0, column=0, sticky="nsew", padx=8)
         tk.Label(a_card, text="Lưu lượng sử dụng (7 ngày qua)", font=("Segoe UI", 13, "bold"), fg=C_DARK, bg=C_SURFACE).pack(anchor="w", pady=(0, 15))
         
@@ -459,7 +432,7 @@ class DashboardFrame(tk.Frame):
         bar_cv.bind("<Configure>", _render_bars)
 
         # B: Donut Chart
-        b_outer, b_card = make_card(grid, padx=25, pady=25, shadow=True)
+        b_outer, b_card = make_card(grid, padx=25, pady=25, shadow=True, bg=C_SURFACE)
         b_outer.grid(row=0, column=1, sticky="nsew", padx=8)
         tk.Label(b_card, text="Tỉ lệ xử lý phê duyệt", font=("Segoe UI", 13, "bold"), fg=C_DARK, bg=C_SURFACE).pack(anchor="w", pady=(0, 15))
         
@@ -471,7 +444,8 @@ class DashboardFrame(tk.Frame):
         def _render_donut():
             don_cv.delete("all")
             sumry = self.report_ctrl.build_dashboard()
-            vals = [sumry.get('bookings', 10), sumry.get('pending', 5), sumry.get('rejected', 2)]
+            vals = [sumry.get('Tong dat phong', 0), sumry.get('Cho duyet', 0), sumry.get('Tu choi', 0)]
+
             tot = sum(vals) or 1
             cols = [C_SUCCESS, C_WARNING, C_DANGER]
             start = 90
@@ -497,8 +471,9 @@ class DashboardFrame(tk.Frame):
         grid.pack(fill="x", padx=20, pady=15)
         grid.columnconfigure(0, weight=1); grid.columnconfigure(1, weight=1)
         
+        card_bg = "#ffffff"
         # Left: Top Rooms
-        l_outer, l_card = make_card(grid, padx=25, pady=25, shadow=True)
+        l_outer, l_card = make_card(grid, padx=25, pady=25, shadow=True, bg=C_SURFACE)
         l_outer.grid(row=0, column=0, sticky="nsew", padx=8)
         tk.Label(l_card, text="Phòng phổ biến nhất", font=("Segoe UI", 12, "bold"), fg=C_DARK, bg=C_SURFACE).pack(anchor="w", pady=(0, 15))
         
@@ -513,7 +488,7 @@ class DashboardFrame(tk.Frame):
             tk.Frame(prog, bg=col, width=int(val*3)).place(x=0, y=0, relheight=1, relwidth=val/100)
 
         # Right: Peak Hours
-        r_outer, r_card = make_card(grid, padx=25, pady=25, shadow=True)
+        r_outer, r_card = make_card(grid, padx=25, pady=25, shadow=True, bg=C_SURFACE)
         r_outer.grid(row=0, column=1, sticky="nsew", padx=8)
         tk.Label(r_card, text="Khung giờ cao điểm", font=("Segoe UI", 12, "bold"), fg=C_DARK, bg=C_SURFACE).pack(anchor="w", pady=(0, 15))
         
@@ -530,32 +505,6 @@ class DashboardFrame(tk.Frame):
             peak_cv.create_polygon([0, h, *coords, w, h], fill=C_PRIMARY, stipple="gray25", outline="")
         peak_cv.bind("<Configure>", _render_peaks)
 
-    def _draw_system_pulse_bar(self, body: tk.Frame) -> None:
-        bar = tk.Frame(body, bg="#1e1b4b", height=40)
-        bar.pack(fill="x", padx=25, pady=20)
-        
-        tk.Label(bar, text="LIVE SYSTEM MONITOR", font=("Segoe UI", 8, "bold"), fg="#818cf8", bg="#1e1b4b").pack(side="left", padx=20)
-        
-        pulse_cv = tk.Canvas(bar, width=200, height=40, bg="#1e1b4b", highlightthickness=0)
-        pulse_cv.pack(side="left")
-        
-        def _draw_pulse():
-            if not self.winfo_exists(): return
-            pulse_cv.delete("all")
-            pts = []
-            for i in range(20):
-                pts.extend([i*10, 20 + random.randint(-10, 10) * self._pulse_alpha])
-            pulse_cv.create_line(pts, fill="#4ade80", width=2, smooth=True)
-            self.after(150, _draw_pulse)
-        _draw_pulse()
-        
-        tk.Label(bar, text="Uptime: 14d 02h 45m • Server: VN-NORTH-01", font=("Segoe UI", 8), fg="#94a3b8", bg="#1e1b4b").pack(side="right", padx=20)
-
-    def _draw_footer(self, body: tk.Frame) -> None:
-        foot = tk.Frame(body, bg=C_BG, pady=40)
-        foot.pack(fill="x")
-        tk.Label(foot, text="Titanium RBS Platform v5.0.4-stable", font=("Segoe UI", 9), fg=C_MUTED, bg=C_BG).pack()
-        tk.Label(foot, text="© 2026 University Management Systems. All rights reserved.", font=("Segoe UI", 8), fg="#cbd5e1", bg=C_BG).pack()
 
     def _nav_to(self, key: str) -> None:
         w = self.master
@@ -567,10 +516,20 @@ class DashboardFrame(tk.Frame):
     def _get_weekly_stats(self) -> Dict[str, int]:
         counts = {d: 0 for d in ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"]}
         try:
-            bookings = self.booking_ctrl.list_bookings(from_today=False)
+            # Fixed: list_bookings call with correct keyword arguments
+            bookings = self.booking_ctrl.list_bookings(current_user=self.current_user, from_today=False)
             for b in bookings:
-                d_obj = dt.date.fromisoformat(b.booking_date)
-                idx = d_obj.weekday()
-                counts[["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"][idx]] += 1
-        except: pass
+                try:
+                    # Robust date parsing: handle "2026-05-12 -> 2026-08-31" range format
+                    date_val = str(b.booking_date)
+                    if " -> " in date_val:
+                        date_val = date_val.split(" -> ")[0]
+                    
+                    d_obj = dt.date.fromisoformat(date_val)
+                    idx = d_obj.weekday()
+                    counts[["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "CN"][idx]] += 1
+                except (ValueError, TypeError, IndexError):
+                    continue
+        except Exception as e: 
+            print(f"[Dashboard] Stats Error: {e}")
         return counts

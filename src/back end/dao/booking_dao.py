@@ -78,6 +78,137 @@ class BookingDAO:
         rows = conn.execute(sql, params).fetchall()
         return [_row_to_booking(r) for r in rows]
 
+    def count_by_status(self) -> dict[str, int]:
+        conn = get_connection()
+        rows = conn.execute(
+            "SELECT status, COUNT(*) AS total FROM bookings GROUP BY status"
+        ).fetchall()
+        return {str(r["status"]): int(r["total"]) for r in rows}
+
+    def count_by_slot(self) -> dict[str, int]:
+        conn = get_connection()
+        rows = conn.execute(
+            "SELECT slot, COUNT(*) AS total FROM bookings GROUP BY slot"
+        ).fetchall()
+        return {str(r["slot"]): int(r["total"]) for r in rows}
+
+    def count_by_date_range(self, date_from: str, date_to: str) -> dict[str, int]:
+        conn = get_connection()
+        rows = conn.execute(
+            """
+            SELECT booking_date, COUNT(*) AS total
+            FROM bookings
+            WHERE booking_date >= ? AND booking_date <= ?
+            GROUP BY booking_date
+            """,
+            (date_from, date_to),
+        ).fetchall()
+        return {str(r["booking_date"]): int(r["total"]) for r in rows}
+
+    def count_by_month_prefixes(self, months: list[str]) -> dict[str, int]:
+        if not months:
+            return {}
+        date_from = f"{months[0]}-01"
+        date_to = f"{months[-1]}-31"
+        conn = get_connection()
+        rows = conn.execute(
+            """
+            SELECT substr(booking_date, 1, 7) AS month, COUNT(*) AS total
+            FROM bookings
+            WHERE booking_date >= ? AND booking_date <= ?
+            GROUP BY substr(booking_date, 1, 7)
+            """,
+            (date_from, date_to),
+        ).fetchall()
+        return {str(r["month"]): int(r["total"]) for r in rows}
+
+    def count_by_room(
+        self,
+        date_from: str = "",
+        date_to: str = "",
+    ) -> dict[str, int]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if date_from:
+            clauses.append("booking_date >= ?")
+            params.append(date_from)
+        if date_to:
+            clauses.append("booking_date <= ?")
+            params.append(date_to)
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        conn = get_connection()
+        rows = conn.execute(
+            f"SELECT room_id, COUNT(*) AS total FROM bookings {where} GROUP BY room_id",
+            params,
+        ).fetchall()
+        return {str(r["room_id"]): int(r["total"]) for r in rows}
+
+    def room_status_counts(
+        self,
+        date_from: str = "",
+        date_to: str = "",
+    ) -> dict[str, dict[str, int]]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if date_from:
+            clauses.append("booking_date >= ?")
+            params.append(date_from)
+        if date_to:
+            clauses.append("booking_date <= ?")
+            params.append(date_to)
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        conn = get_connection()
+        rows = conn.execute(
+            f"""
+            SELECT room_id, status, COUNT(*) AS total
+            FROM bookings
+            {where}
+            GROUP BY room_id, status
+            """,
+            params,
+        ).fetchall()
+        result: dict[str, dict[str, int]] = {}
+        for r in rows:
+            result.setdefault(str(r["room_id"]), {})[str(r["status"])] = int(r["total"])
+        return result
+
+    def top_users(self, limit: int = 5) -> list[tuple[str, str, int]]:
+        conn = get_connection()
+        rows = conn.execute(
+            """
+            SELECT user_id, user_name, COUNT(*) AS total
+            FROM bookings
+            GROUP BY user_id, user_name
+            ORDER BY total DESC, user_name ASC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        return [(str(r["user_id"]), str(r["user_name"]), int(r["total"])) for r in rows]
+
+    def used_slots_by_room(
+        self,
+        booking_date: str,
+        statuses: set[str],
+    ) -> dict[str, set[str]]:
+        if not statuses:
+            return {}
+        placeholders = ",".join("?" for _ in statuses)
+        params: list[object] = [booking_date, *sorted(statuses)]
+        conn = get_connection()
+        rows = conn.execute(
+            f"""
+            SELECT room_id, slot
+            FROM bookings
+            WHERE booking_date = ? AND status IN ({placeholders})
+            """,
+            params,
+        ).fetchall()
+        result: dict[str, set[str]] = {}
+        for r in rows:
+            result.setdefault(str(r["room_id"]), set()).add(str(r["slot"]))
+        return result
+
     def save(self, booking: Booking) -> Booking:
         conn = get_connection()
         conn.execute(

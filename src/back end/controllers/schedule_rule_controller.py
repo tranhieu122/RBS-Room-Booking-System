@@ -138,21 +138,113 @@ class ScheduleRuleController:
     def update_rule_status(self, rule_id: int, status: str) -> None:
         if status not in VALID_STATUSES:
             raise ValueError(f"Trang thai khong hop le: {status}")
-            
+
+        rule = self.get_rule(rule_id)
+        if rule is None:
+            raise ValueError(f"Khong tim thay lich voi id = {rule_id}.")
+
         # LOGIC FIX: Re-check conflicts when activating a rule
         if status == "Hoat dong":
-            rule = self.get_rule(rule_id)
-            if rule:
-                occs = self._generate_occurrences(rule)
-                self._check_conflicts(rule, occs)
+            occs = self._generate_occurrences(rule)
+            self._check_conflicts(rule, occs)
                 
         self.dao.update_status(rule_id, status)
+        if status == "Huy":
+            for occurrence in self.dao.list_occurrences(rule_id):
+                self.dao.update_occurrence_status(occurrence.occ_id, "Huy")
+        elif rule.status == "Huy" and status in {"Cho duyet", "Hoat dong"}:
+            for occurrence in self.dao.list_occurrences(rule_id):
+                if occurrence.status == "Huy":
+                    self.dao.update_occurrence_status(occurrence.occ_id, "Du kien")
+
+    def cancel_rule(self, rule_id: int) -> None:
+        """Cancel a recurring schedule and mark its occurrences as cancelled."""
+        self.update_rule_status(rule_id, "Huy")
 
     def update_occurrence_status(self, occ_id: int, status: str) -> None:
         valid = {"Du kien", "Da dien ra", "Huy"}
         if status not in valid:
             raise ValueError(f"Trang thai buoi hoc khong hop le: {status}")
         self.dao.update_occurrence_status(occ_id, status)
+
+    # ── Update (full edit) ──────────────────────────────────────────────────────
+
+    def update_rule(self, rule_id: int, payload: dict) -> ScheduleRule:
+        """Validate, update a ScheduleRule, delete old occurrences, regenerate."""
+        existing = self.get_rule(rule_id)
+        if existing is None:
+            raise ValueError(f"Khong tim thay lich voi id = {rule_id}.")
+
+        subject = payload.get("subject", "").strip()
+        if not subject:
+            raise ValueError("Ten mon hoc / ten buoi day khong duoc de trong.")
+
+        days_of_week: list[int] = list(payload.get("days_of_week", []))
+        if not days_of_week:
+            raise ValueError("Phai chon it nhat mot thu trong tuan.")
+        invalid = [d for d in days_of_week if d not in range(1, 8)]
+        if invalid:
+            raise ValueError(f"Gia tri thu khong hop le: {invalid}")
+
+        start_time: str = payload.get("start_time", "").strip()
+        end_time: str   = payload.get("end_time", "").strip()
+        if not start_time or not end_time:
+            raise ValueError("Phai nhap gio bat dau va gio ket thuc.")
+        try:
+            t_start = dt.time.fromisoformat(start_time)
+            t_end   = dt.time.fromisoformat(end_time)
+        except ValueError:
+            raise ValueError("Dinh dang gio phai la HH:MM.")
+        if t_start >= t_end:
+            raise ValueError("Gio bat dau phai truoc gio ket thuc.")
+
+        start_date: str = payload.get("start_date", "").strip()
+        end_date:   str = payload.get("end_date", "").strip()
+        try:
+            d_start = dt.date.fromisoformat(start_date)
+            d_end   = dt.date.fromisoformat(end_date)
+        except ValueError:
+            raise ValueError("Ngay bat dau / ket thuc phai theo dinh dang YYYY-MM-DD.")
+        if d_start > d_end:
+            raise ValueError("Ngay bat dau phai truoc hoac bang ngay ket thuc.")
+
+        room_id: str      = payload.get("room_id", "").strip()
+        lecturer_id: str  = payload.get("lecturer_id", "").strip()
+        if not room_id:
+            raise ValueError("Phai chon phong hoc.")
+        if not lecturer_id:
+            raise ValueError("Phai nhap ma giang vien.")
+
+        lecturer_name: str = payload.get("lecturer_name", "").strip()
+
+        # Build updated rule object
+        existing.subject = subject
+        existing.days_of_week = sorted(days_of_week)
+        existing.start_time = start_time
+        existing.end_time = end_time
+        existing.start_date = start_date
+        existing.end_date = end_date
+        existing.room_id = room_id
+        existing.lecturer_id = lecturer_id
+        existing.lecturer_name = lecturer_name
+        existing.status = payload.get("status", existing.status)
+
+        # Conflict check (excluding self)
+        occurrences = self._generate_occurrences(existing)
+        self._check_conflicts(existing, occurrences)
+
+        # Persist: update rule + regenerate occurrences
+        self.dao.update_rule(existing)
+        self.dao.delete_occurrences(rule_id)
+        for occ in occurrences:
+            occ.rule_id = rule_id
+        self.dao.insert_occurrences(occurrences)
+
+        _log.info(
+            "ScheduleRule #%d updated — %d occurrences regenerated",
+            rule_id, len(occurrences),
+        )
+        return existing
 
     # ── Delete ────────────────────────────────────────────────────────────────
 

@@ -54,6 +54,8 @@ from gui.room_gui import RoomManagementFrame
 from gui.schedule_gui import ScheduleFrame
 from gui.recurring_schedule_gui import RecurringScheduleFrame
 from gui.user_gui import UserManagementFrame
+from gui.booking_history_gui import BookingHistoryFrame
+from gui.advance_booking_calendar import AdvanceCalendarFrame
 
 # ── Layout ───────────────────────────────────────────────────────────────────
 SIDEBAR_W = 260
@@ -68,14 +70,14 @@ SB_ACCENT = "#4f46e5"    # Indigo 600
 SB_TEXT   = "#475569"    # Slate 600
 SB_TEXT_ACTIVE = "#4f46e5"
 SB_MUTED  = "#94a3b8"
-SB_SECT   = "#f8fafc"
+SB_SECT   = "#ffffff"
 
 # ── Top-bar palette — Clean Glass ───────────────────────────────────────────
 TP_BG     = "#ffffff"
 TP_BORDER = "#f1f5f9"
-TP_TEXT   = "#0f172a"
+TP_TEXT   = "#111827"
 TP_MUTED  = "#64748b"
-C_BG      = "#f8fafc"    # Slate 50
+C_BG      = "#ffffff"
 C_SURFACE = "#ffffff"
 C_BORDER  = "#e2e8f0"
 
@@ -94,11 +96,14 @@ ROLE_AVATAR = {
 # ── Nav: (label, key, icon).  key=="---" → section header ────────────────────
 NAV_ALL = [
     ("Trang chủ",       "dashboard",           "🏠"),
+    ("QUẢN LÝ GIẢNG DẠY", "---",               None),
     ("Đặt phòng",       "booking_form",        "📅"),
-    ("Danh sách đặt",   "booking_list",        "📋"),
-    ("Lịch biểu",       "schedule",            "📆"),
     ("Lịch dạy chu kỳ", "recurring_schedule",  "🔄"),
-    ("Thông báo",       "notifications",       "📩"),
+    ("QUẢN LÝ LỊCH",    "---",                 None),
+    ("Danh sách đặt",   "booking_list",        "📋"),
+    ("Lịch sử cá nhân", "booking_history",     "🕒"),
+    ("Lịch 30 ngày",    "advance_calendar",    "📆"),
+    ("Lịch biểu",       "schedule",            "📆"),
     ("QUẢN TRỊ",        "---",                 None),
     ("Quản lý phòng",   "rooms",               "🏫"),
     ("Người dùng",      "users",               "👥"),
@@ -106,16 +111,20 @@ NAV_ALL = [
     ("Báo cáo",         "report",              "📈"),
     ("Báo lỗi phòng",   "room_issues",         "⚠️"),
     ("Quản lý đánh giá", "room_ratings",        "⭐"),
+    ("Thông báo",       "notifications",       "📩"),
 ]
 
 NAV_GV_SV = [
     ("Trang chủ",       "dashboard",           "🏠"),
+    ("QUẢN LÝ GIẢNG DẠY", "---",               None),
     ("Đặt phòng",       "booking_form",        "📅"),
-    ("Lịch sử đặt",     "booking_list",        "📋"),
-    ("Lịch biểu",       "schedule",            "📆"),
     ("Lịch dạy chu kỳ", "recurring_schedule",  "🔄"),
-    ("Thông báo",       "notifications",       "📩"),
+    ("LỊCH SỬ & TIỆN ÍCH", "---",              None),
+    ("Lịch sử đặt",     "booking_history",     "🕒"),
+    ("Lịch 30 ngày",    "advance_calendar",    "📆"),
+    ("Lịch biểu",       "schedule",            "📆"),
     ("Phòng học",       "rooms",               "🏫"),
+    ("Thông báo",       "notifications",       "📩"),
 ]
 
 PAGE_TITLES = {
@@ -132,6 +141,8 @@ PAGE_TITLES = {
     "notifications":       "Thông báo nội bộ",
     "room_ratings":        "Quản lý đánh giá người dùng",
     "profile":             "Hồ sơ người dùng",
+    "booking_history":     "Lịch sử đặt phòng của tôi",
+    "advance_calendar":    "Lịch đặt phòng 30 ngày",
 }
 
 
@@ -265,8 +276,8 @@ class MainShell(tk.Frame):
         
         logo_f = tk.Frame(left, bg=TP_BG)
         logo_f.pack(side="left")
-        tk.Label(logo_f, text="SMART", bg=TP_BG, fg=C_PRIMARY, font=("Segoe UI", 11, "bold")).pack(side="left")
-        tk.Label(logo_f, text="CAMPUS", bg=TP_BG, fg=C_DARK, font=("Segoe UI", 11, "bold")).pack(side="left", padx=(4, 0))
+        tk.Label(logo_f, text="TITANIUM", bg=TP_BG, fg=C_PRIMARY, font=("Segoe UI", 11, "bold")).pack(side="left")
+        tk.Label(logo_f, text="RBS", bg=TP_BG, fg=C_DARK, font=("Segoe UI", 11, "bold")).pack(side="left", padx=(4, 0))
 
         # ── Center: Search ────────────────────────────────────────────────
         center = tk.Frame(tb, bg=TP_BG)
@@ -353,10 +364,10 @@ class MainShell(tk.Frame):
         u = self.app.current_user
         
         # Header (User Info) - Premium Look
-        head = tk.Frame(menu, bg="#f8fafc", padx=15, pady=12)
+        head = tk.Frame(menu, bg="#ffffff", padx=15, pady=12)
         head.pack(fill="x")
-        tk.Label(head, text=u.full_name, bg="#f8fafc", fg=C_DARK, font=("Segoe UI", 10, "bold")).pack(anchor="w")
-        tk.Label(head, text=u.role.upper(), bg="#f8fafc", fg=C_PRIMARY, font=("Segoe UI", 7, "bold")).pack(anchor="w")
+        tk.Label(head, text=u.full_name, bg="#ffffff", fg=C_DARK, font=("Segoe UI", 10, "bold")).pack(anchor="w")
+        tk.Label(head, text=u.role.upper(), bg="#ffffff", fg=C_PRIMARY, font=("Segoe UI", 7, "bold")).pack(anchor="w")
         
         tk.Frame(menu, bg="#f1f5f9", height=1).pack(fill="x")
         
@@ -376,7 +387,7 @@ class MainShell(tk.Frame):
                           font=("Segoe UI", 9), anchor="w", padx=15, pady=10, cursor="hand2")
             btn.pack(fill="x")
             
-            def _h(e): btn.config(bg="#f8fafc", fg=C_PRIMARY)
+            def _h(e): btn.config(bg="#ffffff", fg=C_PRIMARY)
             def _l(e): btn.config(bg="white", fg="#475569")
             btn.bind("<Enter>", _h); btn.bind("<Leave>", _l)
             
@@ -512,9 +523,11 @@ class MainShell(tk.Frame):
             cv.create_text(32, 28, text="S", font=("Segoe UI", 16, "bold"), fill="white")
             
             if not self._sb_collapsed:
-                cv.create_text(65, 22, text="TITANIUM RBS", 
-                              font=("Segoe UI", 13, "bold"), fill="#1e293b", anchor="w", tags="txt")
-                cv.create_text(65, 42, text="Quản trị viên Hệ thống", 
+                cv.create_text(65, 30, text="TITANIUM", 
+                              font=("Segoe UI", 12, "bold"), fill=SB_ACCENT, anchor="w", tags="txt")
+                cv.create_text(138, 30, text="RBS", 
+                              font=("Segoe UI", 12, "bold"), fill=C_DARK, anchor="w", tags="txt")
+                cv.create_text(65, 48, text="Quản trị viên Hệ thống", 
                               font=("Segoe UI", 8), fill="#64748b", anchor="w", tags="txt")
 
         self._logo_canvas.bind("<Configure>", _draw_logo)
@@ -636,7 +649,7 @@ class MainShell(tk.Frame):
         wrap = tk.Frame(parent, bg=SB_BG, padx=12, pady=16)
         wrap.pack(side="bottom", fill="x")
         
-        card = tk.Frame(wrap, bg="#f8fafc", padx=12, pady=12)
+        card = tk.Frame(wrap, bg="#ffffff", padx=12, pady=12)
         card.pack(fill="x")
         card.config(highlightthickness=1, highlightbackground="#e2e8f0")
         
@@ -650,10 +663,10 @@ class MainShell(tk.Frame):
         av.create_oval(26, 26, 34, 34, fill="#22c55e", outline=SB_BG, width=1)
         
         # Info
-        info = tk.Frame(card, bg="#f8fafc")
+        info = tk.Frame(card, bg="#ffffff")
         info.pack(side="left", fill="x", expand=True)
-        tk.Label(info, text=user.full_name, bg="#f8fafc", fg="#1e293b", font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
-        tk.Label(info, text=user.role.upper(), bg="#f8fafc", fg="#64748b", font=("Segoe UI", 7, "bold"), anchor="w").pack(fill="x")
+        tk.Label(info, text=user.full_name, bg="#ffffff", fg="#111827", font=("Segoe UI", 9, "bold"), anchor="w").pack(fill="x")
+        tk.Label(info, text=user.role.upper(), bg="#ffffff", fg="#6b7280", font=("Segoe UI", 7, "bold"), anchor="w").pack(fill="x")
 
     # ── Sidebar toggle ────────────────────────────────────────────────────────
     def _toggle_sidebar(self) -> None:
@@ -683,7 +696,7 @@ class MainShell(tk.Frame):
         self.after(10, lambda: self._animate_sidebar(target_w))
 
     # ── Navigation ─────────────────────────────────────────────────────────────
-    def _navigate(self, key: str) -> None:
+    def _navigate(self, key: str, **kwargs: Any) -> None:
         self._refresh_pending_badge()
         self._refresh_notif_badge()
 
@@ -731,15 +744,23 @@ class MainShell(tk.Frame):
                 frame = BookingFormFrame(
                     self._content_frame, app.booking_ctrl, app.room_ctrl,
                     app.current_user,
-                    on_booking_created=lambda: self._navigate("booking_list"),
+                    on_booking_created=lambda: self._navigate("booking_history"),
                     on_navigate_to_rooms=lambda: self._navigate("rooms"),
                     equipment_controller=app.equip_ctrl,
-                    feedback_controller=app.feedback_ctrl)
+                    feedback_controller=app.feedback_ctrl,
+                    initial_date=kwargs.get("initial_date"))
             elif key in ("booking_list", "lich_su_dat"):
                 frame = BookingListFrame(self._content_frame,
                                          app.booking_ctrl, app.current_user,
                                          room_controller=app.room_ctrl,
                                          schedule_ctrl=app.schedule_rule_ctrl)
+            elif key == "booking_history":
+                frame = BookingHistoryFrame(self._content_frame, app.booking_ctrl, app.current_user)
+            elif key == "advance_calendar":
+                frame = AdvanceCalendarFrame(
+                    self._content_frame, app.room_ctrl, app.booking_ctrl, app.current_user,
+                    on_date_selected=lambda d: self._navigate("booking_form", initial_date=d)
+                )
             elif key == "users":
                 frame = UserManagementFrame(self._content_frame, app.user_ctrl)
             elif key == "equipment":

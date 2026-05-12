@@ -150,31 +150,9 @@ class BookingListFrame(tk.Frame):
                 or q in str(r[0]).lower()   # booking_id
             ]
 
-        # Add recurring rules if admin or lecturer
-        if self.schedule_ctrl:
-            rules = self.schedule_ctrl.list_rules(status=self.status_var.get().strip())
-            # Filter by lecturer if not admin
-            if self.current_user.role != "Admin":
-                rules = [r for r in rules if str(r.lecturer_id) == str(self.current_user.user_id)]
-            
-            for r in rules:
-                rule_row = (
-                    f"rule_{r.rule_id}", 
-                    r.lecturer_name, 
-                    r.room_id, 
-                    f"{r.start_date} ~ {r.end_date}",
-                    "Nhiều ca" if len(r.days_of_week) > 1 else f"Thứ {r.days_of_week[0]}",
-                    f"[CK] {r.subject}", 
-                    r.status
-                )
-                # Search filter for recurring rules
-                if q:
-                    if not (q in str(r.lecturer_name).lower() or q in str(r.room_id).lower() or q in str(r.subject).lower() or q in f"rule_{r.rule_id}".lower()):
-                        continue
-                all_rows.append(rule_row)
-
         assert self.tree is not None
         fill_tree(self.tree, all_rows)
+
 
     def _selected_id(self) -> str | None:
         assert self.tree is not None
@@ -188,9 +166,9 @@ class BookingListFrame(tk.Frame):
             return
         
         # Handle recurring rule
-        if bid.startswith("rule_"):
+        if bid.startswith("RULE-"):
             if not self.schedule_ctrl: return
-            rule_id = int(bid.replace("rule_", ""))
+            rule_id = int(bid.replace("RULE-", ""))
             # Map status: "Da duyet" -> "Hoat dong", "Tu choi" -> "Huy"
             s_map = {"Da duyet": "Hoat dong", "Tu choi": "Huy"}
             mapped_status = s_map.get(new_status, new_status)
@@ -273,9 +251,9 @@ class BookingListFrame(tk.Frame):
                                ok_text="Xóa", kind="danger"):
             return
         try:
-            if bid.startswith("rule_"):
+            if bid.startswith("RULE-"):
                 if not self.schedule_ctrl: return
-                rule_id = int(bid.replace("rule_", ""))
+                rule_id = int(bid.replace("RULE-", ""))
                 self.schedule_ctrl.delete_rule(rule_id)
                 toast(self, "Đã xóa lịch dạy chu kỳ.", kind="success")
             else:
@@ -292,7 +270,7 @@ class BookingListFrame(tk.Frame):
             return
         
         # Check if it's a recurring rule
-        if bid.startswith("rule_"):
+        if bid.startswith("RULE-"):
             confirm_dialog(self, "Tính năng", 
                            "Để chỉnh sửa Lịch dạy chu kỳ, vui lòng truy cập mục 'Lịch dạy chu kỳ' để có đầy đủ công cụ quản lý cấu hình.",
                            kind="info", cancel_text=None)
@@ -350,17 +328,19 @@ class _EditBookingDialog(tk.Toplevel):
                      values=room_values, state="readonly", width=34).grid(
             row=2, column=0, columnspan=2, padx=20, pady=6)
 
-        # Date
-        lbl(3, "NGAY DAT (YYYY-MM-DD)")
+        # Fixed Date picker integration
+        from gui.date_picker_fixed import DatePickerWithLabel
+        lbl(3, "NGAY DAT")
         self.date_var = tk.StringVar(value=booking.booking_date)
-        de = DateEntry(self, textvariable=self.date_var, width=34,  # type: ignore[possibly-unbound]
-                       date_pattern="yyyy-mm-dd", background="#4f46e5",
-                       foreground="white", weekendbackground="white",
-                       weekendforeground="black",
-                       state="readonly",
-                       borderwidth=1,
-                       font=("Segoe UI", 10))
-        de.grid(row=4, column=0, columnspan=2, padx=20, pady=6)  # type: ignore[attr-defined]
+        
+        # Use DatePickerWithLabel for consistent premium feel and fixed bug
+        picker_frame = tk.Frame(self, bg=C_BG)
+        picker_frame.grid(row=4, column=0, columnspan=2, padx=20, pady=6, sticky="ew")
+        
+        self.date_picker = DatePickerWithLabel(picker_frame, self.date_var)
+        self.date_picker.pack(fill="x", expand=True)
+        # Store internal reference for potential direct access
+        self._date_entry = self.date_picker._date_entry
 
         # Slot
         lbl(5, "CA HOC")

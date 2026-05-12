@@ -29,6 +29,13 @@ class RoomDAO:
         row = conn.execute("SELECT * FROM rooms WHERE id=?", (room_id,)).fetchone()
         return _row_to_room(row) if row else None
 
+    def count_active(self) -> int:
+        conn = get_connection()
+        row = conn.execute(
+            "SELECT COUNT(*) FROM rooms WHERE status != 'Da xoa'"
+        ).fetchone()
+        return int(row[0]) if row else 0
+
     def save(self, room: Room) -> Room:
         conn = get_connection()
         conn.execute(

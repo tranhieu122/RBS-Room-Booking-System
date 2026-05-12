@@ -67,10 +67,7 @@ class RoomController:
         Returns list of dicts:
             room_id, name, capacity, room_type, status, booking_count
         """
-        all_bookings = booking_ctrl.booking_dao.list_all()
-        count_map: dict[str, int] = {}
-        for b in all_bookings:
-            count_map[b.room_id] = count_map.get(b.room_id, 0) + 1
+        count_map = booking_ctrl.booking_dao.count_by_room()
         result = []
         for r in self.room_dao.list_all():
             result.append({ # type: ignore
@@ -120,10 +117,11 @@ class RoomController:
                              booking_date: str, slot: str) -> list[Room]:
         """Return active rooms that are free for the given date + slot."""
         available: list[Room] = []
+        used_by_room = booking_ctrl.used_slots_by_room(booking_date)
         for room in self.room_dao.list_all():
             if room.status != "Hoat dong":
                 continue
-            if slot in booking_ctrl.available_slots(room.room_id, booking_date):
+            if slot not in used_by_room.get(room.room_id, set()):
                 available.append(room)
         return available
 
@@ -135,5 +133,4 @@ class RoomController:
         if min_capacity > 0:
             rooms = [r for r in rooms if r.capacity >= min_capacity]
         return sorted(rooms, key=lambda r: r.capacity)
-
 

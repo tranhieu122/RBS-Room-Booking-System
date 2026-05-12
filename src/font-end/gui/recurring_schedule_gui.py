@@ -91,6 +91,8 @@ class RecurringScheduleFrame(tk.Frame):
         self.user_ctrl  = user_controller
         self.current_user = current_user
         self._selected_rule_id: int | None = None
+        self._editing_rule_id: int | None = None
+        self._is_editing = False
         self._v_subject = tk.StringVar()
         self._build()
 
@@ -125,23 +127,23 @@ class RecurringScheduleFrame(tk.Frame):
         for i in range(4): grid.columnconfigure(i, weight=1)
 
         def _stat_card(col, icon, label, val_var_name, color):
-            outer, card = make_card(grid, padx=18, pady=15, shadow=True)
-            outer.grid(row=0, column=col, sticky="nsew", padx=8)
+            outer, card = make_card(grid, padx=14, pady=10, shadow=True)
+            outer.grid(row=0, column=col, sticky="nsew", padx=6)
             
             # Left icon with glow effect
-            badge = tk.Frame(card, bg="#f8fafc", padx=10, pady=8)
-            badge.pack(side="left", padx=(0, 15))
-            tk.Label(badge, text=icon, font=("Segoe UI", 20), bg="#f8fafc", fg=color).pack()
+            badge = tk.Frame(card, bg="#f8fafc", padx=8, pady=6)
+            badge.pack(side="left", padx=(0, 10))
+            tk.Label(badge, text=icon, font=("Segoe UI", 16), bg="#f8fafc", fg=color).pack()
             
             txt_f = tk.Frame(card, bg=C_SURFACE)
             txt_f.pack(side="left", fill="both", expand=True)
             
-            lbl_val = tk.Label(txt_f, text="0", font=("Segoe UI", 18, "bold"), 
+            lbl_val = tk.Label(txt_f, text="0", font=("Segoe UI", 16, "bold"), 
                               fg=C_DARK, bg=C_SURFACE)
             lbl_val.pack(anchor="w")
             setattr(self, val_var_name, lbl_val)
             
-            tk.Label(txt_f, text=label.upper(), font=("Segoe UI", 8, "bold"), 
+            tk.Label(txt_f, text=label.upper(), font=("Segoe UI", 7, "bold"), 
                      fg=C_MUTED, bg=C_SURFACE).pack(anchor="w")
 
             # Hover interaction
@@ -168,14 +170,16 @@ class RecurringScheduleFrame(tk.Frame):
         # Header with accent and Premium Title
         f_hdr = tk.Frame(card, bg="#f8fafc", pady=15, padx=20)
         f_hdr.pack(fill="x")
-        tk.Label(f_hdr, text="TẠO MỚI LỊCH CHU KỲ", bg="#f8fafc",
-                 fg=C_PRIMARY, font=("Segoe UI", 11, "bold")).pack(side="left")
+        self._lbl_form_title = tk.Label(f_hdr, text="TẠO MỚI LỊCH CHU KỲ", bg="#f8fafc",
+                 fg=C_PRIMARY, font=("Segoe UI", 11, "bold"))
+        self._lbl_form_title.pack(side="left")
         
         # Status Badge in header
         status_f = tk.Frame(f_hdr, bg="#eef2ff", padx=8, pady=2)
         status_f.pack(side="right")
-        tk.Label(status_f, text="TIÊU CHUẨN", bg="#eef2ff", fg=C_PRIMARY,
-                 font=("Segoe UI", 7, "bold")).pack()
+        self._lbl_form_status = tk.Label(status_f, text="TIÊU CHUẨN", bg="#eef2ff", fg=C_PRIMARY,
+                 font=("Segoe UI", 7, "bold"))
+        self._lbl_form_status.pack()
         
         tk.Frame(card, bg=C_BORDER, height=1).pack(fill="x")
 
@@ -309,19 +313,24 @@ class RecurringScheduleFrame(tk.Frame):
         f_dates.pack(fill="x")
         f_dates.columnconfigure(0, weight=1); f_dates.columnconfigure(1, weight=1)
 
-        f_d1 = tk.Frame(f_dates, bg=C_SURFACE); f_d1.grid(row=0, column=0, sticky="ew", padx=(0, 5))
-        self._de_start = DateEntry(f_d1, font=("Segoe UI", 10), date_pattern="yyyy-mm-dd", 
-                                   background=C_PRIMARY, foreground="white", borderwidth=0,
-                                   state="readonly")
-        self._de_start.set_date(dt.date.today())
-        self._de_start.pack(fill="x", ipady=3)
+        # Fixed Date picker integration
+        from gui.date_picker_fixed import DatePickerWithLabel
+        
+        f_d1 = tk.Frame(f_dates, bg=C_SURFACE)
+        f_d1.grid(row=0, column=0, sticky="ew", padx=(0, 5))
+        self._v_start_date = tk.StringVar(value=dt.date.today().isoformat())
+        self.picker_start = DatePickerWithLabel(f_d1, self._v_start_date, on_change=self._update_preview)
+        self.picker_start.pack(fill="x")
+        # Keep internal reference for backward compatibility
+        self._de_start = self.picker_start._date_entry
 
-        f_d2 = tk.Frame(f_dates, bg=C_SURFACE); f_d2.grid(row=0, column=1, sticky="ew", padx=(5, 0))
-        self._de_end = DateEntry(f_d2, font=("Segoe UI", 10), date_pattern="yyyy-mm-dd",
-                                 background=C_PRIMARY, foreground="white", borderwidth=0,
-                                 state="readonly")
-        self._de_end.set_date(dt.date.today() + dt.timedelta(weeks=16))
-        self._de_end.pack(fill="x", ipady=3)
+        f_d2 = tk.Frame(f_dates, bg=C_SURFACE)
+        f_d2.grid(row=0, column=1, sticky="ew", padx=(5, 0))
+        self._v_end_date = tk.StringVar(value=(dt.date.today() + dt.timedelta(weeks=16)).isoformat())
+        self.picker_end = DatePickerWithLabel(f_d2, self._v_end_date, on_change=self._update_preview)
+        self.picker_end.pack(fill="x")
+        # Keep internal reference for backward compatibility
+        self._de_end = self.picker_end._date_entry
 
         # ── Preview Card ────────────────────────────────────────────────────
         self._preview_outer, self._preview_inner = make_card(body, padx=16, pady=12, shadow=False)
@@ -348,7 +357,8 @@ class RecurringScheduleFrame(tk.Frame):
         self._btn_save = btn(btn_row, "Lưu Lịch Chu Kỳ", self._submit, variant="primary", icon="💾")
         self._btn_save.pack(side="left", fill="x", expand=True)
         
-        btn(btn_row, "Hủy", self._clear_form, variant="ghost", icon="🧹").pack(side="left", padx=(10, 0))
+        self._btn_cancel = btn(btn_row, "Hủy", self._clear_form, variant="ghost", icon="🧹")
+        self._btn_cancel.pack(side="left", padx=(10, 0))
 
         # Bindings for automatic preview update
         self._de_start.bind("<<DateEntrySelected>>", lambda _: self._update_preview())
@@ -374,10 +384,10 @@ class RecurringScheduleFrame(tk.Frame):
         outer, card = make_card(right_outer, padx=0, pady=0)
         outer.pack(fill="both", expand=True)
 
-        hdr = tk.Frame(card, bg=C_SURFACE, padx=16, pady=12)
+        hdr = tk.Frame(card, bg=C_SURFACE, padx=16, pady=8)
         hdr.pack(fill="x")
         tk.Label(hdr, text="Danh sach lich day chu ky", bg=C_SURFACE,
-                 fg=C_DARK, font=F_SECTION).pack(side="left")
+                 fg=C_DARK, font=("Segoe UI", 10, "bold")).pack(side="left")
         btn(hdr, "Lam moi", self._refresh_list,
             variant="ghost", icon="🔄").pack(side="right")
 
@@ -407,8 +417,36 @@ class RecurringScheduleFrame(tk.Frame):
                  "Khoang thoi gian", "Phong", "So buoi", "Trang thai")
         widths = (40, 150, 120, 100, 160, 60, 60, 80)
 
+        # Action bar (Pack FIRST with side=bottom to ensure visibility)
+        act = tk.Frame(card, bg="#f8fafc", padx=16, pady=8)
+        act.pack(side="bottom", fill="x")
+        
+        left_act = tk.Frame(act, bg="#f8fafc")
+        left_act.pack(side="left")
+        
+        self._btn_view = btn(left_act, "Xem Chi Tiết", self._view_occurrences,
+            variant="primary", icon="📋")
+        self._btn_view.pack(side="left")
+        
+        self._btn_edit = btn(left_act, "Chỉnh Sửa", self._edit_rule,
+            variant="outline", icon="✏️")
+        self._btn_edit.pack(side="left", padx=8)
+        
+        self._btn_status = btn(left_act, "Đổi Trạng thái", self._change_status,
+            variant="outline", icon="🔄")
+        self._btn_status.pack(side="left")
+
+        # Right actions
+        right_act = tk.Frame(act, bg="#f8fafc")
+        right_act.pack(side="right")
+        btn(right_act, "Xóa Lịch", self._delete_rule,
+            variant="danger", icon="🗑️").pack(side="right")
+        tk.Label(right_act, text="Cẩn thận khi xóa  ", bg="#f8fafc", fg=C_MUTED,
+                 font=("Segoe UI", 8, "italic")).pack(side="right")
+        
+        # Treeview container (Pack LAST with expand=True)
         tree_frame = tk.Frame(card, bg=C_SURFACE)
-        tree_frame.pack(fill="both", expand=True, padx=16, pady=(0, 6))
+        tree_frame.pack(side="top", fill="both", expand=True, padx=16, pady=(0, 6))
 
         self._tree = ttk.Treeview(  # type: ignore
             tree_frame, columns=cols, show="headings",
@@ -434,30 +472,9 @@ class RecurringScheduleFrame(tk.Frame):
             if item:
                 self._tree.tk.call(self._tree, "tag", "remove", "hover")
                 self._tree.item(item, tags=(self._tree.item(item, "tags") + ("hover",)))
-        self._tree.bind("<Motion>", _on_motion) # Added binding for motion
+        self._tree.bind("<Motion>", _on_motion)
         
         self._tree.tag_configure("hover", background="#eef2ff")
-
-        # Action bar
-        act = tk.Frame(card, bg="#f8fafc", padx=16, pady=15)
-        act.pack(fill="x")
-        
-        left_act = tk.Frame(act, bg="#f8fafc")
-        left_act.pack(side="left")
-        
-        btn(left_act, "Xem Chi Tiết", self._view_occurrences,
-            variant="primary", icon="📋").pack(side="left")
-        btn(left_act, "Đổi Trạng Thái", self._change_status,
-            variant="outline", icon="✏️").pack(side="left", padx=10)
-        
-        right_act = tk.Frame(act, bg="#f8fafc")
-        right_act.pack(side="right")
-        
-        btn(right_act, "Xóa Lịch", self._delete_rule,
-            variant="danger", icon="🗑️").pack(side="right")
-        
-        tk.Label(right_act, text="Cẩn thận khi xóa  ", bg="#f8fafc", fg=C_MUTED,
-                 font=("Segoe UI", 8, "italic")).pack(side="right")
 
         # Occurrence detail panel (hidden by default)
         self._occ_panel = tk.Frame(right_outer, bg=C_BG,
@@ -584,7 +601,14 @@ class RecurringScheduleFrame(tk.Frame):
             "lecturer_id":  lect_id or "unknown",
             "lecturer_name": lect_name,
         }
-        
+
+        # Confirmation before saving
+        action_name = "Cập nhật" if self._is_editing else "Tạo mới"
+        if not confirm_dialog(self, f"Xác nhận {action_name}", 
+                             f"Bạn có chắc chắn muốn {action_name.lower()} lịch dạy này?\nHệ thống sẽ kiểm tra xung đột và sinh các buổi học tương ứng.",
+                             kind="primary"):
+            return
+
         # If Admin, can create as Active immediately
         if self.current_user and self.current_user.role == "Admin":
             payload["status"] = "Hoat dong"
@@ -592,16 +616,21 @@ class RecurringScheduleFrame(tk.Frame):
             payload["status"] = "Cho duyet"
 
         try:
-            rule = self.ctrl.create_rule(payload)
+            if self._is_editing and self._editing_rule_id:
+                rule = self.ctrl.update_rule(self._editing_rule_id, payload)
+                n_occ = self.ctrl.count_occurrences(rule.rule_id)
+                toast(self, f"✅ Đã cập nhật lịch #{rule.rule_id} — {n_occ} buổi học được sinh lại!")
+            else:
+                rule = self.ctrl.create_rule(payload)
+                n_occ = self.ctrl.count_occurrences(rule.rule_id)
+                toast(self, f"✅ Đã tạo lịch #{rule.rule_id} — {n_occ} buổi học được sinh ra!")
         except ValueError as exc:
-            confirm_dialog(self, "Loi nhap lieu", str(exc), kind="warning", cancel_text=None)
+            confirm_dialog(self, "Lỗi nhập liệu", str(exc), kind="warning", cancel_text=None)
             return
         except Exception as exc:
-            confirm_dialog(self, "Loi he thong", str(exc), kind="danger", cancel_text=None)
+            confirm_dialog(self, "Lỗi hệ thống", str(exc), kind="danger", cancel_text=None)
             return
 
-        n_occ = self.ctrl.count_occurrences(rule.rule_id)
-        toast(self, f"✅ Da tao lich #{rule.rule_id} — {n_occ} buoi hoc duoc sinh ra!")
         self._clear_form()
         self._refresh_list()
 
@@ -615,6 +644,12 @@ class RecurringScheduleFrame(tk.Frame):
         self._v_end_time.set("09:30")
 
     def _clear_form(self) -> None:
+        self._is_editing = False
+        self._editing_rule_id = None
+        self._lbl_form_title.config(text="TẠO MỚI LỊCH CHU KỲ", fg=C_PRIMARY)
+        self._btn_save.config(text="Lưu Lịch Chu Kỳ")
+        self._lbl_form_status.config(text="TIÊU CHUẨN", bg="#eef2ff", fg=C_PRIMARY)
+        
         self._v_subject.set("")
         for v in self._day_vars.values():
             v.set(False)
@@ -693,14 +728,68 @@ class RecurringScheduleFrame(tk.Frame):
         else:
             self._selected_rule_id = None
 
-    def _view_occurrences(self) -> None:
+    def _edit_rule(self) -> None:
         if self._selected_rule_id is None:
-            confirm_dialog(self, "Thong bao", "Hay chon mot lich de xem chi tiet.", 
+            confirm_dialog(self, "Thông báo", "Hãy chọn một lịch để chỉnh sửa.", 
                            kind="primary", cancel_text=None)
             return
         rule = self.ctrl.get_rule(self._selected_rule_id)
         if rule is None:
-            confirm_dialog(self, "Loi", "Khong tim thay lich.", 
+            return
+        
+        # Load into form
+        self._is_editing = True
+        self._editing_rule_id = rule.rule_id
+        self._lbl_form_title.config(text=f"SỬA LỊCH #{rule.rule_id}", fg="#4f46e5")
+        self._btn_save.config(text="Cập nhật Lịch")
+        self._lbl_form_status.config(text="ĐANG CHỈNH SỬA", bg="#fef3c7", fg="#b45309")
+        
+        self._v_subject.set(rule.subject)
+        self._v_lecturer.set(rule.lecturer_name)
+        
+        # Find room
+        rooms = self.room_ctrl.list_rooms()
+        room_val = next((f"{r.room_id} - {r.name}" for r in rooms if r.room_id == rule.room_id), rule.room_id)
+        self._v_room.set(room_val)
+        
+        # Days
+        day_set = set(rule.days_of_week)
+        for d, var in self._day_vars.items():
+            var.set(d in day_set)
+            self._update_day_btn(d)
+        
+        # Time
+        self._v_start_time.set(rule.start_time)
+        self._v_end_time.set(rule.end_time)
+        
+        # Find slot preset
+        preset_found = False
+        for name, st, et in SLOT_PRESETS:
+            if st == rule.start_time and et == rule.end_time:
+                self._v_slot.set(name)
+                preset_found = True
+                break
+        if not preset_found:
+            self._v_slot.set("Tuy chinh")
+        
+        # Dates
+        try:
+            self._de_start.set_date(dt.date.fromisoformat(rule.start_date))
+            self._de_end.set_date(dt.date.fromisoformat(rule.end_date))
+        except Exception:
+            pass
+            
+        self._update_preview()
+        toast(self, "✏️ Đã tải thông tin lịch vào form để chỉnh sửa.")
+
+    def _view_occurrences(self) -> None:
+        if self._selected_rule_id is None:
+            confirm_dialog(self, "Thông báo", "Hãy chọn một lịch để xem chi tiết.", 
+                           kind="primary", cancel_text=None)
+            return
+        rule = self.ctrl.get_rule(self._selected_rule_id)
+        if rule is None:
+            confirm_dialog(self, "Lỗi", "Không tìm thấy lịch.", 
                            kind="danger", cancel_text=None)
             return
         occurrences = self.ctrl.list_occurrences(self._selected_rule_id)

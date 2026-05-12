@@ -47,6 +47,46 @@ class ScheduleRuleDAO:
         ).fetchall()
         return [_row_to_rule(r) for r in rows]
 
+    def search(
+        self,
+        lecturer_id: str = "",
+        room_id: str = "",
+        status: str = "",
+        date_from: str = "",
+        date_to: str = "",
+        keyword: str = "",
+    ) -> list[ScheduleRule]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if lecturer_id:
+            clauses.append("lecturer_id = ?")
+            params.append(lecturer_id)
+        if room_id:
+            clauses.append("room_id = ?")
+            params.append(room_id)
+        if status:
+            clauses.append("status = ?")
+            params.append(status)
+        if date_from:
+            clauses.append("end_date >= ?")
+            params.append(date_from)
+        if date_to:
+            clauses.append("start_date <= ?")
+            params.append(date_to)
+        if keyword:
+            kw = f"%{keyword}%"
+            clauses.append(
+                "(lecturer_name LIKE ? OR room_id LIKE ? OR subject LIKE ? OR CAST(id AS TEXT) LIKE ?)"
+            )
+            params.extend([kw, kw, kw, kw])
+        where = ("WHERE " + " AND ".join(clauses)) if clauses else ""
+        conn = get_connection()
+        rows = conn.execute(
+            f"SELECT * FROM schedule_rules {where} ORDER BY start_date DESC, id DESC",
+            params,
+        ).fetchall()
+        return [_row_to_rule(r) for r in rows]
+
     def find_by_id(self, rule_id: int) -> ScheduleRule | None:
         conn = get_connection()
         row = conn.execute(
@@ -73,11 +113,35 @@ class ScheduleRuleDAO:
         rule.rule_id = cur.lastrowid or 0
         return rule
 
+    def update_rule(self, rule: ScheduleRule) -> None:
+        """Update all editable fields of an existing rule."""
+        conn = get_connection()
+        days_str = ",".join(str(d) for d in sorted(rule.days_of_week))
+        conn.execute(
+            """
+            UPDATE schedule_rules
+            SET subject=?, days_of_week=?, start_time=?, end_time=?,
+                start_date=?, end_date=?, room_id=?, lecturer_id=?,
+                lecturer_name=?, status=?
+            WHERE id=?
+            """,
+            (rule.subject, days_str, rule.start_time, rule.end_time,
+             rule.start_date, rule.end_date, rule.room_id, rule.lecturer_id,
+             rule.lecturer_name, rule.status, rule.rule_id),
+        )
+        conn.commit()
+
     def update_status(self, rule_id: int, status: str) -> None:
         conn = get_connection()
         conn.execute(
             "UPDATE schedule_rules SET status=? WHERE id=?", (status, rule_id)
         )
+        conn.commit()
+
+    def delete_occurrences(self, rule_id: int) -> None:
+        """Delete all occurrences for a given rule (used before regenerating)."""
+        conn = get_connection()
+        conn.execute("DELETE FROM schedule_occurrences WHERE rule_id=?", (rule_id,))
         conn.commit()
 
     def delete(self, rule_id: int) -> None:
@@ -132,6 +196,33 @@ class ScheduleRuleDAO:
             (date_from, date_to),
         ).fetchall()
         return [dict(r) for r in rows]
+
+    def used_slots_by_room(self, occurrence_date: str) -> dict[str, set[str]]:
+        conn = get_connection()
+        rows = conn.execute(
+            """
+            SELECT o.room_id, o.start_time
+            FROM schedule_occurrences o
+            JOIN schedule_rules r ON o.rule_id = r.id
+            WHERE o.occurrence_date = ?
+              AND o.status != 'Huy'
+              AND r.status != 'Huy'
+            """,
+            (occurrence_date,),
+        ).fetchall()
+        start_to_slot = {
+            "07:00": "Ca 1",
+            "09:35": "Ca 2",
+            "13:00": "Ca 3",
+            "15:35": "Ca 4",
+            "18:15": "Ca 5",
+        }
+        result: dict[str, set[str]] = {}
+        for r in rows:
+            slot = start_to_slot.get(str(r["start_time"]))
+            if slot:
+                result.setdefault(str(r["room_id"]), set()).add(slot)
+        return result
 
     def count_occurrences(self, rule_id: int) -> int:
         conn = get_connection()

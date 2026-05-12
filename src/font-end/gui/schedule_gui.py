@@ -5,6 +5,8 @@ import tkinter as tk
 from tkinter import ttk
 from gui.theme import (C_BG, C_SURFACE, C_BORDER, C_DARK, C_TEXT, C_PRIMARY, C_PRIMARY_H, C_MUTED,
                        F_TITLE, F_SECTION, F_BODY_B, page_header, btn, make_card)
+from gui.class_student_list_gui import ClassStudentListDialog
+
 
 # Fallback constants if not imported
 if 'C_DARK' not in globals(): C_DARK = "#0f172a"
@@ -77,7 +79,8 @@ def _cell_tooltip(cell: tk.Widget, entries: "list[tuple[str, str]]",
             "Tu choi":   ("#fdf2f8", "#db2777"),
             "Lich day":  ("#e0f2fe", "#0369a1"),
         }
-        for label, status, is_mine in entries[:5]:
+        for label, status, is_mine, source_id in entries[:5]:
+
             chip_bg, chip_fg = STATUS_CHIP.get(status, ("#f1f5f9", "#475569"))
             if is_mine: chip_bg, chip_fg = ("#4f46e5", "white")
             
@@ -188,20 +191,6 @@ class ScheduleFrame(tk.Frame):
         
         btn(filter_f, "", self._refresh, variant="ghost", icon="🔄").pack(side="left")
 
-        # ── Legend Bar (Pill Badges)
-        legend_frm = tk.Frame(self, bg=C_SURFACE)
-        legend_frm.pack(fill="x", padx=20, pady=(0, 10))
-        
-        from gui.theme import status_badge
-        tk.Label(legend_frm, text="Chú thích:", bg=C_SURFACE, fg=C_MUTED, 
-                 font=("Segoe UI", 8, "bold")).pack(side="left", padx=(0, 10))
-
-        
-        for text, bg, fg in LEGEND:
-            b = tk.Label(legend_frm, text=f"  {text}  ", bg=bg, fg=fg,
-                         font=("Segoe UI", 8, "bold"), padx=4, pady=2,
-                         relief="flat", highlightthickness=1, highlightbackground="#e2e8f0")
-            b.pack(side="left", padx=4)
             
         # ── Week summary stats bar (Fixed at bottom)
         self._stats_bar = tk.Frame(self, bg=C_SURFACE)
@@ -302,6 +291,47 @@ class ScheduleFrame(tk.Frame):
             self._offset_badge.config(text=f"+{self._week_offset} tuần",
                                       bg="#dbeafe", fg="#1d4ed8")
 
+    def _show_class_student_list(self, date_str: str, day_name: str, 
+                                 slot_key: str, class_id: str) -> None:
+        """
+        Show student list for clicked class/booking.
+        Called when user clicks on a schedule cell.
+        """
+        try:
+            # Get class details from controller
+            class_obj = self.booking_ctrl.get_class(class_id)
+            if not class_obj:
+                return
+            
+            # Get enrollment list
+            students = self.booking_ctrl.get_enrollment_list(class_id)
+            
+            # Prepare class info dict
+            class_info = {
+                "class_id": class_id,
+                "name": getattr(class_obj, 'name', getattr(class_obj, 'purpose', 'Lớp học')),
+                "time": f"{slot_key} ({getattr(class_obj, 'time_range', '')})",
+                "room": getattr(class_obj, 'room_id', '')
+            }
+            
+            # Show dialog
+            ClassStudentListDialog(
+                self,
+                class_info=class_info,
+                students=students,
+                on_student_select=self._on_student_selected
+            )
+        except Exception as e:
+            print(f"Error showing class details: {e}")
+            import traceback
+            traceback.print_exc()
+
+    def _on_student_selected(self, student: dict[str, str]) -> None:
+        """Called when a student is selected from the list."""
+        print(f"Selected: {student.get('ho_dem', '')} {student.get('ten', '')} "
+              f"({student.get('ma_so', '')})")
+
+
     def _show_cell_detail(self, entries: "list[tuple[str, str]]", date_str: str,
                           day_name: str, slot_label: str) -> None:
         """Show a popup with booking details for a clicked schedule cell."""
@@ -333,7 +363,8 @@ class ScheduleFrame(tk.Frame):
             "Tu choi":   ("#fdf2f8", "#db2777"),
             "Lich day":  ("#e0f2fe", "#0369a1"),
         }
-        for label, status, is_mine in entries:
+        for label, status, is_mine, source_id in entries:
+
             sbg, sfg = STATUS_COLORS.get(status, ("#f1f5f9", "#475569"))
             if is_mine: sbg, sfg = ("#4f46e5", "white")
             
@@ -406,7 +437,8 @@ class ScheduleFrame(tk.Frame):
                 continue
             key = (s.weekday, s.slot) # type: ignore
             is_mine = (self.current_user and s.user_id == self.current_user.user_id)
-            lookup.setdefault(key, []).append((s.label, s.status, is_mine)) # type: ignore
+            lookup.setdefault(key, []).append((s.label, s.status, is_mine, s.source_id)) # type: ignore
+
 
 
         gf = self._grid_frame
@@ -468,7 +500,8 @@ class ScheduleFrame(tk.Frame):
                 cell.pack(fill="both", expand=True)
                 
                 if entries:
-                    main_label, main_status, is_mine = entries[0]
+                    main_label, main_status, is_mine, source_id = entries[0]
+
                     s_bg, s_fg = CELL_COLORS.get(main_status, ("#f1f5f9", "#475569"))
                     if is_mine:
                         s_bg, s_fg = ("#eef2ff", "#4f46e5") # Indigo theme for mine
@@ -507,9 +540,17 @@ class ScheduleFrame(tk.Frame):
                     # Tooltip & Detail
                     _cell_tooltip(cell, entries, date_iso, slot_key)
                     
-                    def _show_detail(e: object, i=list(entries), ds=date_iso, dn=day, sl=shift_lbl) -> None:
-                        self._show_cell_detail(i, ds, dn, sl)
+                    def _show_detail(e: object, ents=list(entries), ds=date_iso, dn=day, sk=slot_key) -> None:
+                        # Extract class_id from first entry
+                        class_id = ents[0][3] if ents and len(ents[0]) > 3 else ""
+                        if class_id:
+                            self._show_class_student_list(ds, dn, sk, class_id)
+                        else:
+                            # Fallback to old behavior if no source_id
+                            self._show_cell_detail(ents, ds, dn, sk)
+                            
                     cell.bind("<Button-1>", _show_detail)
+
 
                     # Interactions for occupied cells
                     def _on_cell_enter(e, w=cell, b=bg): 
@@ -558,9 +599,9 @@ class ScheduleFrame(tk.Frame):
         # ── Update Stats Bar (Fixed area)
 
         total_bookings = sum(len(v) for v in lookup.values())
-        approved  = sum(1 for v in lookup.values() for _, s in v if s == "Da duyet")
-        pending   = sum(1 for v in lookup.values() for _, s in v if s == "Cho duyet")
-        rejected  = sum(1 for v in lookup.values() for _, s in v if s == "Tu choi")
+        approved  = sum(1 for v in lookup.values() for entry in v if len(entry) >= 2 and entry[1] == "Da duyet")
+        pending   = sum(1 for v in lookup.values() for entry in v if len(entry) >= 2 and entry[1] == "Cho duyet")
+        rejected  = sum(1 for v in lookup.values() for entry in v if len(entry) >= 2 and entry[1] == "Tu choi")
         busy_cells = sum(1 for v in lookup.values() if v)
         total_cells = len(DAYS) * len(SLOT_KEYS)
         rate = int(busy_cells * 100 / total_cells) if total_cells else 0
@@ -607,3 +648,22 @@ class ScheduleFrame(tk.Frame):
         _stat_chip(chips_f, "⏳", "Chờ duyệt",      str(pending),        "#fef3c7", "#b45309", 2, "#f59e0b")
         _stat_chip(chips_f, "❌", "Từ chối",        str(rejected),       "#fdf2f8", "#db2777", 3, "#ec4899")
         _stat_chip(chips_f, "📈", "Tỷ lệ sử dụng",  f"{rate}%",          "#f0f9ff", "#0369a1", 4)
+
+    def _show_class_student_list(self, date_iso: str, day_name: str, slot: str, class_id: str) -> None:
+        """Fetch class info and student list, then show the dialog."""
+        class_obj = self.booking_ctrl.get_class_info(class_id)
+        if not class_obj:
+            messagebox.showerror("Lỗi", f"Không tìm thấy thông tin cho lớp học {class_id}")
+            return
+            
+        students = self.booking_ctrl.get_enrollment_list(class_id)
+        
+        info = {
+            "class_id": class_id,
+            "name": getattr(class_obj, "name", "N/A"),
+            "time": f"{day_name} - {slot}",
+            "room": getattr(class_obj, "room_id", "N/A")
+        }
+        
+        from gui.class_student_list_gui import ClassStudentListDialog
+        ClassStudentListDialog(self, info, students)

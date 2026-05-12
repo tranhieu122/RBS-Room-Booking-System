@@ -27,6 +27,11 @@ class EquipmentDAO:
         row = conn.execute("SELECT * FROM equipment WHERE id=?", (equipment_id,)).fetchone()
         return _row_to_equipment(row) if row else None
 
+    def count_all(self) -> int:
+        conn = get_connection()
+        row = conn.execute("SELECT COUNT(*) FROM equipment").fetchone()
+        return int(row[0]) if row else 0
+
     def save(self, equipment: Equipment) -> Equipment:
         conn = get_connection()
         conn.execute(

@@ -70,6 +70,13 @@ class UserDAO:
         ).fetchone()
         return _row_to_user(row) if row else None
 
+    def count_active(self) -> int:
+        conn = get_connection()
+        row = conn.execute(
+            "SELECT COUNT(*) FROM users WHERE status != 'Da xoa'"
+        ).fetchone()
+        return int(row[0]) if row else 0
+
     def save(self, user: User) -> User:
         conn = get_connection()
         conn.execute(

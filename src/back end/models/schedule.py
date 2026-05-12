@@ -10,4 +10,6 @@ class Schedule:
     label: str
     status: str
     user_id: str = ""
+    source_id: str = ""
+
 

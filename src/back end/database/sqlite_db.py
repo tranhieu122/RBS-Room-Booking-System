@@ -4,6 +4,7 @@ The database file is stored at:
     <project>/src/back end/database/classroom_booking.db
 """
 from __future__ import annotations
+import os
 import shutil
 import sqlite3
 from datetime import datetime
@@ -11,7 +12,16 @@ from pathlib import Path
 from utils.logger import get_logger
 
 _log = get_logger(__name__)
-_DB_PATH = Path(__file__).parent / "classroom_booking.db"
+
+
+def _resolve_db_path() -> str:
+    configured_path = os.getenv("DB_PATH")
+    if configured_path:
+        return configured_path
+    return str(Path(__file__).parent / "classroom_booking.db")
+
+
+_DB_PATH = _resolve_db_path()
 
 _SCHEMA = """
 PRAGMA foreign_keys = ON;
@@ -121,6 +131,15 @@ CREATE TABLE IF NOT EXISTS equipment_reports (
     created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS class_enrollments (
+    id        INTEGER PRIMARY KEY AUTOINCREMENT,
+    class_id  TEXT NOT NULL,
+    user_id   TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+
+
 CREATE TABLE IF NOT EXISTS schedule_occurrences (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     rule_id         INTEGER NOT NULL,
@@ -140,12 +159,23 @@ CREATE INDEX IF NOT EXISTS idx_bookings_user_id    ON bookings(user_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_room_id    ON bookings(room_id);
 CREATE INDEX IF NOT EXISTS idx_bookings_date       ON bookings(booking_date);
 CREATE INDEX IF NOT EXISTS idx_bookings_status     ON bookings(status);
+CREATE INDEX IF NOT EXISTS idx_bookings_room_date_status
+    ON bookings(room_id, booking_date, status);
+CREATE INDEX IF NOT EXISTS idx_bookings_user_date_status
+    ON bookings(user_id, booking_date, status);
+CREATE INDEX IF NOT EXISTS idx_bookings_date_status
+    ON bookings(booking_date, status);
 CREATE INDEX IF NOT EXISTS idx_equipment_room_id   ON equipment(room_id);
 CREATE INDEX IF NOT EXISTS idx_equipment_status    ON equipment(status);
+CREATE INDEX IF NOT EXISTS idx_rooms_status        ON rooms(status);
 CREATE INDEX IF NOT EXISTS idx_room_ratings_room   ON room_ratings(room_id);
 CREATE INDEX IF NOT EXISTS idx_room_issues_room    ON room_issues(room_id);
 CREATE INDEX IF NOT EXISTS idx_occ_rule_id         ON schedule_occurrences(rule_id);
 CREATE INDEX IF NOT EXISTS idx_occ_date            ON schedule_occurrences(occurrence_date);
+CREATE INDEX IF NOT EXISTS idx_occ_room_date_status
+    ON schedule_occurrences(room_id, occurrence_date, status);
+CREATE INDEX IF NOT EXISTS idx_rules_room_dates_status
+    ON schedule_rules(room_id, start_date, end_date, status);
 """
 
 # ── auto-backup ──────────────────────────────────────────────────────────────
@@ -155,13 +185,14 @@ _BACKUP_KEEP = 7  # number of backups to retain
 
 def backup_database() -> None:
     """Copy DB file to <db_dir>/backups/ with a timestamp.  Keep last N copies."""
-    if not _DB_PATH.exists():
+    db_path = Path(_DB_PATH)
+    if _DB_PATH == ":memory:" or not db_path.exists():
         return
-    backup_dir = _DB_PATH.parent / "backups"
+    backup_dir = db_path.parent / "backups"
     backup_dir.mkdir(exist_ok=True)
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     dest = backup_dir / f"classroom_booking_{ts}.db"
-    shutil.copy2(str(_DB_PATH), str(dest))
+    shutil.copy2(str(db_path), str(dest))
     _log.info("Database backed up → %s", dest)
     # Prune old backups
     all_backups = sorted(backup_dir.glob("classroom_booking_*.db"))
@@ -188,8 +219,9 @@ def get_connection() -> sqlite3.Connection:
     if _conn is None:
         _log.info("Opening SQLite database at %s", _DB_PATH)
         try:
-            _conn = sqlite3.connect(str(_DB_PATH), check_same_thread=False)
+            _conn = sqlite3.connect(_DB_PATH, check_same_thread=False)
             _conn.row_factory = sqlite3.Row
+            _configure_connection(_conn)
             _conn.executescript(_SCHEMA)
             _conn.commit()
             _bootstrap_seed(_conn)
@@ -201,6 +233,25 @@ def get_connection() -> sqlite3.Connection:
             _log.critical("Failed to initialise database", exc_info=True)
             raise
     return _conn
+
+
+def _configure_connection(conn: sqlite3.Connection) -> None:
+    """Tune SQLite for responsive local app reads with safe normal durability."""
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA busy_timeout = 5000")
+    conn.execute("PRAGMA temp_store = MEMORY")
+    conn.execute("PRAGMA cache_size = -20000")
+    if _DB_PATH != ":memory:":
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA synchronous = NORMAL")
+
+
+def reset_connection() -> None:
+    """Close the cached SQLite connection so the next call bootstraps a fresh DB."""
+    global _conn
+    if _conn is not None:
+        _conn.close()
+        _conn = None
 
 
 def _bootstrap_seed(conn: sqlite3.Connection) -> None:
@@ -229,6 +280,8 @@ def _bootstrap_seed(conn: sqlite3.Connection) -> None:
         ("P101", "Phong 101", 50, "Phong hoc",    "May chieu, Dieu hoa",                "Hoat dong"),
         ("P102", "Phong 102", 45, "Phong hoc",    "May chieu, Dieu hoa",                "Hoat dong"),
         ("P103", "Phong 103", 50, "Phong hoc",    "May chieu",                          "Hoat dong"),
+        ("P104", "Phong 104", 55, "Phong hoc",    "May chieu, Dieu hoa",                "Hoat dong"),
+        ("P105", "Phong 105", 55, "Phong hoc",    "May chieu, Dieu hoa",                "Hoat dong"),
         ("P201", "Phong 201", 40, "Phong may",    "May tinh (40), May chieu",           "Hoat dong"),
         ("P202", "Phong 202", 40, "Phong may",    "May tinh (30), May chieu",           "Hoat dong"),
         ("P203", "Phong 203", 35, "Phong may",    "May tinh (35)",                      "Hoat dong"),
@@ -277,6 +330,21 @@ def _bootstrap_seed(conn: sqlite3.Connection) -> None:
     conn.executemany(
         "INSERT INTO equipment (id, name, equipment_type, room_id, status, purchase_date) VALUES (?,?,?,?,?,?)",
         seed_equip,
+    )
+
+    # 4. Seed Enrollments (Mock data for testing)
+    # Let's add students SV001 and SV002 to some sample classes
+    # We don't know the exact booking IDs yet, but we can seed for some common ones
+    # or for RULE-1 (assuming first rule created is 1)
+    seed_enrollments = [
+        ("RULE-1", "SV001"),
+        ("RULE-1", "SV002"),
+        ("RULE-2", "SV001"),
+        ("P101", "SV002"), # Example room-based or booking-based
+    ]
+    conn.executemany(
+        "INSERT INTO class_enrollments (class_id, user_id) VALUES (?,?)",
+        seed_enrollments,
     )
 
     conn.commit()

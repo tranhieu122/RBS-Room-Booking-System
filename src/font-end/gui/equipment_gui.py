@@ -88,11 +88,12 @@ class EquipmentDialog(tk.Toplevel):
             _dt_val = dt.date.fromisoformat(_init_date) if _init_date else dt.date.today()
         except ValueError:
             _dt_val = dt.date.today()
-        self._date_entry = DateEntry(
-            frm, font=("Segoe UI", 10), date_pattern="yyyy-mm-dd",
-            background="#4f46e5", foreground="white", width=32)
-        self._date_entry.set_date(_dt_val) # type: ignore
-        self._date_entry.pack(fill="x", ipady=4) # type: ignore
+        # Fixed Date picker integration
+        from gui.date_picker_fixed import DatePickerWithLabel
+        self.date_var = tk.StringVar(value=_dt_val.isoformat())
+        self.picker = DatePickerWithLabel(frm, self.date_var)
+        self.picker.pack(fill="x")
+        self._date_entry = self.picker._date_entry
 
         # Room combobox
         tk.Label(frm, text="PHONG *", bg=C_SURFACE, fg=C_MUTED,

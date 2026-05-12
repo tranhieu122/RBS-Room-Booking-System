@@ -69,27 +69,20 @@ class ReportFrame(tk.Frame):
                  bg="#eef2ff", fg="#4f46e5",
                  font=("Segoe UI", 10, "bold")).pack(side="left")
 
-        def _date_entry(parent: tk.Frame, var: tk.StringVar,
-                        placeholder: str) -> tk.Widget:
-            wrap = tk.Frame(parent, bg="#ffffff", highlightthickness=1,
-                            highlightbackground="#c7d2fe")
-            wrap.pack(side="left", padx=(8, 0))
-
-            e = DateEntry(wrap, textvariable=var, width=12,
-                           date_pattern="yyyy-mm-dd",
-                           background=C_PRIMARY, foreground="white",
-                           weekendbackground="white", weekendforeground="black",
-                           state="readonly",
-                           borderwidth=0, font=("Segoe UI", 10))
-            e.pack(padx=6, pady=4)
-            return e
+        from gui.date_picker_fixed import DatePickerWithLabel
+        
+        def _date_entry(parent: tk.Frame, var: tk.StringVar) -> tk.Widget:
+            # Use the fixed date picker for better UX and consistency
+            picker = DatePickerWithLabel(parent, var)
+            picker.pack(side="left", padx=(8, 0))
+            return picker._date_entry
 
         tk.Label(filter_panel, text="Tu:", bg="#eef2ff", fg="#4f46e5",
                  font=F_BODY_B).pack(side="left", padx=(10, 0))
-        self._from_entry = _date_entry(filter_panel, self._date_from, "YYYY-MM-DD")
+        self._from_entry = _date_entry(filter_panel, self._date_from)
         tk.Label(filter_panel, text="Den:", bg="#eef2ff", fg="#4f46e5",
                  font=F_BODY_B).pack(side="left", padx=(8, 0))
-        self._to_entry = _date_entry(filter_panel, self._date_to, "YYYY-MM-DD")
+        self._to_entry = _date_entry(filter_panel, self._date_to)
 
         loc_btn = tk.Button(
             filter_panel, text="🔍  Loc",
@@ -139,6 +132,13 @@ class ReportFrame(tk.Frame):
 
         self._render_body()
 
+    def _apply_mousewheel_binding(self, widget: tk.Widget) -> None:
+        """Recursively bind mouse wheel to all children to ensure scrolling works everywhere."""
+        widget.bind("<MouseWheel>", lambda e: self._canvas.yview_scroll(-1*(e.delta//120), "units"))
+        for child in widget.winfo_children():
+            self._apply_mousewheel_binding(child)
+
+
     def _apply_filter(self) -> None:
         from_val = self._from_entry.get().strip()
         to_val   = self._to_entry.get().strip()
@@ -186,6 +186,8 @@ class ReportFrame(tk.Frame):
         dt_ = self._date_to.get()
         self._draw_stat_cards(self._body_ref, df, dt_)
         self._draw_detail_section(self._body_ref, df, dt_)
+        self._apply_mousewheel_binding(self._body_ref)
+
 
     # ── Export helpers ────────────────────────────────────────────────────────
 

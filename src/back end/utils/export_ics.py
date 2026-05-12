@@ -93,19 +93,29 @@ def export_bookings_to_ics(bookings: list, file_path: str) -> None:
     """
     vevents: list[str] = []
     for b in bookings:
-        times = _SLOT_TIMES.get(getattr(b, "slot", ""), None)
-        booking_date_obj = dt.date.fromisoformat(b.booking_date)
-        if times:
-            t_start = dt.time.fromisoformat(times[0])
-            t_end   = dt.time.fromisoformat(times[1])
-            dtstart = _ics_datetime(booking_date_obj, t_start)
-            dtend   = _ics_datetime(booking_date_obj, t_end)
-            date_only = False
-        else:
-            dtstart = _ics_datetime(booking_date_obj)
-            # ICS all-day DTEND is exclusive next day
-            dtend   = _ics_datetime(booking_date_obj + dt.timedelta(days=1))
-            date_only = True
+        try:
+            times = _SLOT_TIMES.get(getattr(b, "slot", ""), None)
+            
+            # Robust date parsing: handle "2026-05-12 -> 2026-08-31" range format
+            date_val = str(b.booking_date)
+            if " -> " in date_val:
+                date_val = date_val.split(" -> ")[0]
+                
+            booking_date_obj = dt.date.fromisoformat(date_val)
+            
+            if times:
+                t_start = dt.time.fromisoformat(times[0])
+                t_end   = dt.time.fromisoformat(times[1])
+                dtstart = _ics_datetime(booking_date_obj, t_start)
+                dtend   = _ics_datetime(booking_date_obj, t_end)
+                date_only = False
+            else:
+                dtstart = _ics_datetime(booking_date_obj)
+                # ICS all-day DTEND is exclusive next day
+                dtend   = _ics_datetime(booking_date_obj + dt.timedelta(days=1))
+                date_only = True
+        except (ValueError, TypeError):
+            continue
 
         summary = f"[{b.slot}] {b.room_id} — {b.purpose}"
         desc    = (f"Nguoi dat: {b.user_name}\n"
